@@ -10,7 +10,7 @@ function Avatars() {
 
     const all = [self, ...others]
   return (
-    <div className="flex justify-end gap-2 items-center mt-14">
+    <div className="flex gap-2 items-center float-right bg-background/30 px-2 py-1 rounded-md">
       <p className="font-light text-sm">Users currently editing this note</p>
       <div className="flex -space-x-5">
         {all.map((other, i) => (

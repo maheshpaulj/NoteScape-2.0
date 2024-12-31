@@ -12,6 +12,7 @@ import { Skeleton } from "@/components//ui/skeleton"
 import { removeCoverFromNote } from "@/actions/actions"
 import { useTransition } from "react"
 import { toast } from "sonner"
+import Avatars from "./Avatars"
 
 interface CoverProps {
   url?:string
@@ -49,6 +50,7 @@ return (
       {!!url && (
         <Image className="object-cover" src={url} alt='Cover' fill/>
       )}
+      <div className="relative"><Avatars /></div>
       {url && !preview && (
         <div className="opacity-0 group-hover:opacity-100 absolute bottom-5 right-5 flex gap-x-2 items-center">
           <Button className="text-muted-foreground text-xs" variant='outline' size='sm' onClick={() => coverIamge.onReplace(url)}>
