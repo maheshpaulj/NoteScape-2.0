@@ -80,29 +80,53 @@ export function DocumentList() {
     setGroupedData(grouped);
   }, [data]);
 
+  const isParentArchived = (notes: RoomDocument[], parentId: string | null): boolean => {
+    if (!parentId) return false;
+    const parent = notes.find(note => note.roomId === parentId);
+    return parent ? parent.archived : false;
+  };
+
   const renderDocuments = (
     notes: RoomDocument[],
     parentId: string | null = null,
     depth: number = 0
   ) => {
-    return notes
-      .filter((note) => note.archived === false)
-      .filter((note) => note.parentNoteId === parentId)
-      .map((note) => (
-        <div key={note.roomId} style={{ paddingLeft: depth ? `30px` : undefined }}>
-          <Item
-            id={note.roomId}
-            onClick={() => onRedirect(note.roomId)}
-            label={note.title}
-            icon={FileIcon}
-            documentIcon={note.icon}
-            active={params.noteId === note.roomId}
-            onExpand={() => onExpand(note.roomId)}
-            expanded={expanded[note.roomId]}
-          />
-          {expanded[note.roomId] && renderDocuments(notes, note.roomId, depth + 1)}
-        </div>
-      ));
+    const filteredNotes = notes.filter(note => !note.archived);
+    
+    // Separate notes into those with archived parents and those without
+    const notesWithArchivedParent = filteredNotes.filter(
+      note => note.parentNoteId && isParentArchived(notes, note.parentNoteId)
+    );
+    
+    const regularNotes = filteredNotes.filter(
+      note => {
+        // Show notes that either:
+        // 1. Have no parent (parentId is null) and match the current parentId parameter
+        // 2. Have a non-archived parent and match the current parentId parameter
+        return note.parentNoteId === parentId && !isParentArchived(notes, note.parentNoteId);
+      }
+    );
+
+    // If we're at the top level (parentId is null), include orphaned notes
+    const notesToRender = parentId === null 
+      ? [...regularNotes, ...notesWithArchivedParent]
+      : regularNotes;
+
+    return notesToRender.map((note) => (
+      <div key={note.roomId} style={{ paddingLeft: depth ? `30px` : undefined }}>
+        <Item
+          id={note.roomId}
+          onClick={() => onRedirect(note.roomId)}
+          label={note.title}
+          icon={FileIcon}
+          documentIcon={note.icon}
+          active={params.noteId === note.roomId}
+          onExpand={() => onExpand(note.roomId)}
+          expanded={expanded[note.roomId]}
+        />
+        {expanded[note.roomId] && renderDocuments(notes, note.roomId, depth + 1)}
+      </div>
+    ));
   };
 
   if (loading) {

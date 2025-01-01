@@ -13,6 +13,9 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/shadcn/style.css";
 import stringToColor from "@/lib/stringToColor";
 import { useTheme } from "next-themes";
+import TranslateNote from "./TranslateNote";
+import ChatToNote from "./ChatToNote";
+import { useEdgeStore } from "@/lib/edgestore";
 
 type BlockNoteProps = {
   doc: Y.Doc;
@@ -21,6 +24,13 @@ type BlockNoteProps = {
 function BlockNote({doc, provider}:BlockNoteProps){
   const {resolvedTheme} = useTheme();
   const userInfo = useSelf((me) => me.info);
+  const {edgestore} = useEdgeStore();
+  
+  const handleUpload = async (file:File) => {
+    const response = await edgestore.publicFiles.upload({file})
+
+    return response.url
+  };
 
   const editor: BlockNoteEditor = useCreateBlockNote({
     collaboration: {
@@ -30,8 +40,11 @@ function BlockNote({doc, provider}:BlockNoteProps){
         name: userInfo.name || userInfo.email,
         color: stringToColor(userInfo.email),
       },
-    }
+    },
+    uploadFile: handleUpload
   });
+
+
   return (
     <div className="relative max-w-6xl mx-auto">
       <BlockNoteView 
@@ -62,11 +75,12 @@ export default function Editor({ noteId } : { noteId:string }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="">
-
+    <div className="">
+      <div className="flex space-x-2">
+        <TranslateNote doc={doc} />
+        <ChatToNote doc={doc} />
       </div>
-      <div className="">
+      <div className="max-w-6xl mx-auto">
         <BlockNote doc={doc} provider={provider} />
       </div>
     </div>

@@ -133,12 +133,8 @@ return (
           <Item onClick={handleCreateNewNote} label='New Note' icon={PlusCircle} />
           <Item onClick={() => {router.push('/home')}} label='Home' icon={HomeIcon} />
           <Item label="Settings" icon={Settings} onClick={settings.onOpen}/>
-        </div>
-        <div className="mt-4">
-          <h2 className="text-start text-secondary-foreground font-semibold text-sm">My Documents</h2>
-          <DocumentList />
           <Popover>
-            <PopoverTrigger className="w-full mt-4">
+            <PopoverTrigger className="w-full">
               <Item label="Trash" icon={Trash} onClick={()=>{}}/>
             </PopoverTrigger>
             <PopoverContent
@@ -148,6 +144,10 @@ return (
               <TrashBox />
             </PopoverContent>
           </Popover>
+        </div>
+        <div className="mt-4">
+          <h2 className="text-start text-secondary-foreground font-semibold text-sm">My Documents</h2>
+          <DocumentList />
         </div>
         <div className="opacity-0 group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-primary/10
         right-0 top-0"
