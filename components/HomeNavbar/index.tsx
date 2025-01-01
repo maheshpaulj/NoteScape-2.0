@@ -40,7 +40,7 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white/80 backdrop-blur-sm border-b' : 'bg-transparent'
+      isScrolled ? 'bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-b' : 'bg-transparent'
     }`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
@@ -62,7 +62,7 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-foreground hover:text-muted-foreground transition-colors"
               >
                 {link.label}
               </Link>
