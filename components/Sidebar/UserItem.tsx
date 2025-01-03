@@ -40,7 +40,7 @@ export const UserItem = () => {
                     </div>
                     <div className="space-y-1">
                     <p className="text-sm line-clamp-1">
-                        {user?.fullName}&apos;s Jotion
+                        {user?.fullName}&apos;s Scape
                     </p>
                     </div>
                 </div>

@@ -23,7 +23,7 @@ return (
         </div>}
       {isSignedIn && isLoaded && (
         <Button asChild>
-          <Link href='/notes'>
+          <Link href='/home'>
             Enter NoteScape
             <ArrowRight className="w-4 h-4 ml-2"/>
           </Link>
