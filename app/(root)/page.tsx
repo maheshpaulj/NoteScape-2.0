@@ -3,8 +3,8 @@ import Heading from "./_components/Heading";
 import { Heroes } from "./_components/Heroes";
 
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
 const AppPreview = () => {
   const integrations = [
@@ -53,7 +53,7 @@ const AppPreview = () => {
           <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <CardContent className="p-6 flex flex-col items-center bg-background dark:bg-neutral-900">
               <div className={`rounded-full w-12 h-12 mb-4 p-2 bg-muted self-center`}>
-                <img src={item.logo} alt={item.name} className="w-full h-full" />
+                <Image src={item.logo} alt={item.name} width={48} height={48} />
               </div>
               <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
               <p className="text-sm text-muted-foreground">{item.description}</p>

@@ -1,9 +1,8 @@
 'use client'
 
-import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
-import { MoreHorizontal, Trash, User } from "lucide-react"
+import { MoreHorizontal, Trash } from "lucide-react"
 
 import {DropdownMenu,DropdownMenuTrigger,
   DropdownMenuContent,DropdownMenuItem,
@@ -20,7 +19,6 @@ interface MenuProps {
 
 export function Menu ({noteId}:MenuProps) {
 
-  const router = useRouter()
   const {user} = useUser()
 
   function handleArchive(id: string) {
@@ -31,6 +29,7 @@ export function Menu ({noteId}:MenuProps) {
       })
     } catch (error) {
       toast.error("failed to create a new note");
+      console.error(error);
     }
   }
 

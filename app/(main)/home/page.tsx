@@ -1,14 +1,13 @@
 "use client";
 import { createNewNote } from '@/actions/actions';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@clerk/clerk-react'
+import { useUser } from '@clerk/nextjs'
 import { PlusCircle } from 'lucide-react';
 import Image from 'next/image'
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
-export default function page() {
-
+export default function Page() {  // Changed from 'page' to 'Page'
   const { user } = useUser();
   const router = useRouter();
   const [ isPending, startTransition ] = useTransition();

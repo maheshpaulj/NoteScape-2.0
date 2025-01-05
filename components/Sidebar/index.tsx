@@ -29,7 +29,7 @@ export function Sidebar () {
   const navbarRef = useRef<ElementRef<'div'>>(null)
   const [isResetting,setIsResetting] = useState(false)
   const [isCollapsed,setIsCollapsed] = useState(isMobile)
-  const [ isPending, startTransition ] = useTransition();
+  const [ isPending, startTransition ] = useTransition(); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   useEffect(() => {
     if (isMobile) {
@@ -37,7 +37,7 @@ export function Sidebar () {
     } else {
       resetWidth()
     }
-  },[isMobile])
+  },[isMobile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (isMobile) {
@@ -109,6 +109,7 @@ export function Sidebar () {
         toast.success("New note created");
       } catch (error) {
         toast.error("failed to create a new note");
+        console.error(error);
       }
     }
 

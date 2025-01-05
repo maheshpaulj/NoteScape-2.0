@@ -25,7 +25,7 @@ export function Cover ({url,preview}:CoverProps) {
   const params = useParams();
   const roomId = params.noteId?.toString();
   const coverIamge = useConverImage();
-  const [ isPending, startTransition ] = useTransition();
+  const [ isPending, startTransition ] = useTransition(); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const onRemove = async () => {
     if (url) {
@@ -40,6 +40,7 @@ export function Cover ({url,preview}:CoverProps) {
         })
     } catch (error) {
         toast.error("failed to remove cover");
+        console.error(error);
     }
   }
 

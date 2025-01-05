@@ -7,7 +7,7 @@ import { getFirestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAoLBlO-RQCY2jlrkGxSQpOB8RWqDHt_rQ",
+  apiKey: process.env.FIREBASE_KEY,
   authDomain: "notescape-db.firebaseapp.com",
   projectId: "notescape-db",
   storageBucket: "notescape-db.firebasestorage.app",

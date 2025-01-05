@@ -3,7 +3,7 @@ import { Footer } from "../_components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Github, Star, Code2, Users, Sparkles, Cpu } from "lucide-react";
+import { Github, Users, Sparkles, Cpu } from "lucide-react";
 import Link from "next/link";
 
 export default function AboutPage() {

@@ -19,7 +19,7 @@ import { useEdgeStore } from "@/lib/edgestore";
 
 type BlockNoteProps = {
   doc: Y.Doc;
-  provider: any;
+  provider: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 function BlockNote({doc, provider}:BlockNoteProps){
   const {resolvedTheme} = useTheme();
@@ -58,7 +58,7 @@ function BlockNote({doc, provider}:BlockNoteProps){
 
 export default function Editor({ noteId } : { noteId:string }) {
   
-  const room = useRoom();
+  const room = useRoom() || noteId;
   const [doc, setDoc] = useState<Y.Doc>();
   const [provider, setProvider] = useState<LiveblocksYjsProvider>();
 

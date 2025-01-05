@@ -5,7 +5,7 @@ import React, { PointerEvent, useRef, useEffect, useState } from "react";
 import FollowPointer from "../FollowPointer";
 
 function LiveCursorProvider({ children }: { children: React.ReactNode }) {
-  const [myPresence, updateMyPresence] = useMyPresence();
+  const [myPresence, updateMyPresence] = useMyPresence(); // eslint-disable-line @typescript-eslint/no-unused-vars
   const others = useOthers();
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -65,8 +65,8 @@ function LiveCursorProvider({ children }: { children: React.ReactNode }) {
         .filter((other) => other.presence.cursor !== null)
         .map(({ connectionId, presence, info }) => {
           // Convert the relative positions back to pixels for this viewport
-          const pixelX = Math.floor(presence.cursor?.x! * dimensions.width);
-          const pixelY = Math.floor(presence.cursor?.y! * dimensions.height);
+          const pixelX = Math.floor(presence.cursor?.x! * dimensions.width); // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
+          const pixelY = Math.floor(presence.cursor?.y! * dimensions.height); // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
 
           return (
             <FollowPointer

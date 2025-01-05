@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useParams } from "next/navigation"
-import { ChevronRight, MenuIcon } from "lucide-react"
+import { MenuIcon } from "lucide-react"
 import { Title } from "./Title"
 import { doc, DocumentData, DocumentReference } from "firebase/firestore"
 import { useUser } from "@clerk/nextjs"
@@ -42,14 +42,14 @@ export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
     ? doc(db, `users/${user.emailAddresses[0].toString()}/rooms/${roomId}`)
     : null
 
-  const [roomData, loading, error] = useDocumentData<RoomDocument>(roomDocRef as DocumentReference<RoomDocument>);
+  const [roomData, loading] = useDocumentData<RoomDocument>(roomDocRef as DocumentReference<RoomDocument>);
 
   if (loading) {
     return (
       <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex justify-between gap-x-4">
         <Title.Skeleton />
         <div className="flex gap-x-2 items-center">
-          {/* <Menu.Skeleton/> */}
+          <Menu.Skeleton/>
         </div>
       </nav>
     )

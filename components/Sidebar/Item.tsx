@@ -46,6 +46,7 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
       toast.success("New note created");
     } catch (error) {
       toast.error("failed to create a new note");
+      console.error(error);
     }
   }
 
@@ -57,6 +58,7 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
       })
     } catch (error) {
       toast.error("failed to create a new note");
+      console.error(error);
     }
   }
 

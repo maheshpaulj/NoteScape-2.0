@@ -18,7 +18,7 @@ export function CoverImageModal () {
   const [isSubmitting,setIsSubmitting] = useState(false);
   const coverImage = useConverImage();
   const {edgestore} = useEdgeStore();
-  const [ isPending, startTransition ] = useTransition();
+  const [ isPending, startTransition ] = useTransition(); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const onClose = () => {
     setFile(undefined)
@@ -40,10 +40,11 @@ export function CoverImageModal () {
         try {
             startTransition(async() => {
               const {success} = await addCoverToNote(roomId, response.url);
-              if (success) toast.success("Icon Added!");
+              if (success) toast.success("Cover image added!");
             })
         } catch (error) {
             toast.error("failed to add icon");
+            console.error(error);
         }
 
       onClose()

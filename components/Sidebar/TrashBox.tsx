@@ -131,6 +131,7 @@ export function TrashBox () {
         })
     } catch (error) {
         toast.error("failed to delete note");
+        console.error(error);
     }
   }
 
@@ -144,6 +145,7 @@ export function TrashBox () {
         })
       } catch (error) {
         toast.error("failed to restore note");
+        console.error(error);
       }
   }
 

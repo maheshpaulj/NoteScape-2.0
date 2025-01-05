@@ -1,7 +1,7 @@
 import { FormEvent, useState, useTransition } from "react"
 import { Button } from "../ui/button"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
-import { usePathname, useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { usePathname } from "next/navigation";
 import { Input } from "../ui/input";
 import { inviteUserToNote } from "@/actions/actions";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ function InviteUser() {
     if(!roomId) return;
 
     startTransition(async() => {
-      const { success } = await inviteUserToNote(roomId, email, user?.emailAddresses[0].toString()!);
+      const { success } = await inviteUserToNote(roomId, email, user?.emailAddresses[0].toString()!); // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
 
       if(success){
         setIsOpen(false);

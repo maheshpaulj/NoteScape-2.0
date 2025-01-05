@@ -48,7 +48,7 @@ export function SearchCommand() {
       )
     : null;
 
-  const [snapshot, loading, error] = useCollection(roomsQuery);
+  const [snapshot] = useCollection(roomsQuery);
 
   useEffect(() => {
     setIsMounted(true);
@@ -92,6 +92,7 @@ export function SearchCommand() {
                 key={note.roomId}
                 value={`${note.roomId}-${note.title}`}
                 onSelect={() => onSelect(note.roomId)}
+                className='cursor-pointer'
               >
                 {note.icon ? (
                   <p className="mr-2 text-[18px]">{note.icon}</p>

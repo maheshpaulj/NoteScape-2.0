@@ -9,11 +9,11 @@ export async function POST(req: NextRequest){
     const { sessionClaims } = await auth();
     const { room } = await req.json();
     
-    const session = liveblocks.prepareSession(sessionClaims?.email!, {
+    const session = liveblocks.prepareSession(sessionClaims?.email!, {// eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
         userInfo: {
-            name: sessionClaims?.fullName!,
-            email: sessionClaims?.email!,
-            avatar: sessionClaims?.image!
+            name: sessionClaims?.fullName!,// eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
+            email: sessionClaims?.email!,// eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
+            avatar: sessionClaims?.image!// eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
         }
     });
 

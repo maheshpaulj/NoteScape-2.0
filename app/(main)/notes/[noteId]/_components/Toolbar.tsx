@@ -1,6 +1,6 @@
 'use client'
 
-import React, { ElementRef, startTransition, useEffect, useRef, useState } from "react"
+import React, { ElementRef, startTransition, useRef, useState } from "react"
 import { ImageIcon, Smile, X } from "lucide-react"
 import TextAreaAutoSize from 'react-textarea-autosize'
 
@@ -85,6 +85,7 @@ export function Toolbar ({noteId, title, icon, coverUrl, preview}:ToolbarProps) 
         })
     } catch (error) {
         toast.error("failed to add icon");
+        console.error(error);
     }
   }
 
@@ -96,6 +97,7 @@ export function Toolbar ({noteId, title, icon, coverUrl, preview}:ToolbarProps) 
         })
     } catch (error) {
         toast.error("failed to remove icon");
+        console.error(error);
     }
   }
 

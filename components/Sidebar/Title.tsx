@@ -39,7 +39,7 @@ interface TitleProps {
 
 export function Title({initialData, id, isOwner}: TitleProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [data, loading, error] = useDocumentData(doc(db, "notes", id));
+  const [data] = useDocumentData(doc(db, "notes", id));
   const [title, setTitle] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
