@@ -5,7 +5,7 @@ import { Skeleton } from "../ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { useUser } from "@clerk/nextjs";
 import { startTransition } from "react";
-import { archiveNote, createNewNote, deleteNote, removeUserFromNote } from "@/actions/actions";
+import { archiveNote, createNewNote, removeUserFromNote } from "@/actions/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
