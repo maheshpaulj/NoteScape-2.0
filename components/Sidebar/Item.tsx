@@ -5,9 +5,20 @@ import { Skeleton } from "../ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { useUser } from "@clerk/nextjs";
 import { startTransition } from "react";
-import { archiveNote, createNewNote } from "@/actions/actions";
+import { archiveNote, createNewNote, deleteNote, removeUserFromNote } from "@/actions/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog"
 
 interface ItemProps {
   id?: string;
@@ -20,12 +31,11 @@ interface ItemProps {
   label?:string
   onClick:() => void
   icon:LucideIcon
+  isEditor?: boolean
 }
 
-export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,level=0,onExpand,expanded}:ItemProps) {
-
+export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,level=0,onExpand,expanded, isEditor}:ItemProps) {
   const ChevronIcon = expanded ? ChevronDown : ChevronRight
-
   const { user } = useUser();
   const router = useRouter();
 
@@ -50,14 +60,29 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
     }
   }
 
+  function handleDelete(id: string) {
+    try {
+      startTransition(async() => {
+        const {success} = await removeUserFromNote(id, user?.emailAddresses[0].toString()!);
+        if(success) {
+          router.push("/home")
+          toast.success("Note Deleted Successfully");
+        }
+      })
+    } catch (error) {
+      toast.error("failed to delete note");
+      console.error(error);
+    }
+  }
+
   function handleArchive(id: string) {
     try {
       startTransition(async() => {
         const {success} = await archiveNote(id);
-        if(success) toast.success("Note Deleted Successfully");
+        if(success) toast.success("Note Archived Successfully");
       })
     } catch (error) {
-      toast.error("failed to create a new note");
+      toast.error("failed to archive note");
       console.error(error);
     }
   }
@@ -99,20 +124,46 @@ return (
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-60" align="start" side="right" forceMount>
-              <DropdownMenuItem onClick={() => {handleArchive(id)}} className="cursor-pointer">
-                <Trash className="w-4 h-4 mr-2"/>
-                Delete
-              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
+                    <Trash className="w-4 h-4 mr-2"/>
+                    Delete
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. Once deleted, you will need to be invited again by the owner to regain access to this file.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => {
+                        if(isEditor) {
+                          handleDelete(id)
+                        } else {
+                          handleArchive(id)
+                        }
+                      }}
+                    >
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <DropdownMenuSeparator/>
               <div className="text-xs text-muted-foreground p-2">
                 Last edited by: {user?.fullName}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-          <div className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600"
+          {!isEditor && <div className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600"
           role="button" onClick={handleCreateNewNote}>
             <Plus className="w-4 h-4 text-muted-foreground"/>
-          </div>
+          </div>}
         </div>
       )}
     </div>

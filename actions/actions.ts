@@ -78,16 +78,36 @@ export async function inviteUserToNote(roomId: string, email: string, ownerEmail
     }
 }
 
-export async function removeUserFromNote(roomId: string, email: string){
+export async function removeUserFromNote(roomId: string, email: string) {
     auth.protect();
 
     try {
-        await adminDb
+        // Get all notes for this user
+        const userNotesRef = adminDb
             .collection("users")
             .doc(email)
-            .collection("rooms")
-            .doc(roomId)
-            .delete();
+            .collection("rooms");
+
+        // Find all notes that have the roomId as their parentNoteId
+        const childNotesQuery = await userNotesRef
+            .where("parentNoteId", "==", roomId)
+            .get();
+
+        // Start a batch write
+        const batch = adminDb.batch();
+
+        // Update all child notes to have null as parentNoteId
+        childNotesQuery.docs.forEach((doc) => {
+            batch.update(doc.ref, {
+                parentNoteId: null
+            });
+        });
+
+        // Delete the room document itself
+        batch.delete(userNotesRef.doc(roomId));
+
+        // Commit all the changes atomically
+        await batch.commit();
 
         return { success: true };
     } catch (error) {
@@ -191,30 +211,40 @@ export async function restoreNote(roomId: string) {
 export async function deleteNote(roomId: string) {
     auth.protect();
     try {
-        const childNoteIds = await getAllChildNotes(roomId);
+        // Get the note being deleted and its potential child
+        const noteRef = adminDb.collection("notes").doc(roomId);
+        const noteDoc = await noteRef.get();
+        const noteData = noteDoc.data();
+
+        // Find the child note
+        const childQuery = await adminDb
+            .collectionGroup("rooms")
+            .where("parentNoteId", "==", roomId)
+            .get();
+
         const batch = adminDb.batch();
-        
-        // Delete the parent note
-        batch.delete(adminDb.collection("notes").doc(roomId));
-        
-        // Delete all child notes
-        for (const childId of childNoteIds) {
-            batch.delete(adminDb.collection("notes").doc(childId));
-        }
-        
-        // Delete corresponding room documents from all users
-        const roomsToDelete = [roomId, ...childNoteIds];
-        for (const id of roomsToDelete) {
-            const roomQuery = await adminDb
-                .collectionGroup("rooms")
-                .where("roomId", "==", id)
-                .get();
-                
-            roomQuery.docs.forEach((doc) => {
-                batch.delete(doc.ref);
+
+        if (!childQuery.empty) {
+            // If there's a child note, update its parentNoteId to the current note's parent
+            const childDoc = childQuery.docs[0];
+            batch.update(childDoc.ref, {
+                parentNoteId: noteData?.parentNoteId || null
             });
         }
-        
+
+        // Delete the current note
+        batch.delete(noteRef);
+
+        // Delete room documents from all users
+        const roomQuery = await adminDb
+            .collectionGroup("rooms")
+            .where("roomId", "==", roomId)
+            .get();
+            
+        roomQuery.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
         await batch.commit();
         return { success: true };
     } catch (error) {

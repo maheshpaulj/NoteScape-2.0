@@ -123,6 +123,7 @@ export function DocumentList() {
           active={params.noteId === note.roomId}
           onExpand={() => onExpand(note.roomId)}
           expanded={expanded[note.roomId]}
+          isEditor={note.role === "editor" ? true : false}
         />
         {expanded[note.roomId] && renderDocuments(notes, note.roomId, depth + 1)}
       </div>

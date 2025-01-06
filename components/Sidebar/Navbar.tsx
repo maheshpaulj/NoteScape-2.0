@@ -72,7 +72,7 @@ export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
         <div className="flex justify-between items-center w-full">
           <Title initialData={roomData} id={roomId} isOwner={isOwner} />
           <div className="flex gap-x-2 items-center">
-            <InviteUser />
+            {isOwner && <InviteUser />}
             <Menu noteId={roomId} />
           </div>
         </div>
