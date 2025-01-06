@@ -63,7 +63,7 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
   function handleDelete(id: string) {
     try {
       startTransition(async() => {
-        const {success} = await removeUserFromNote(id, user?.emailAddresses[0].toString()!);
+        const {success} = await removeUserFromNote(id, user?.emailAddresses[0].toString()!); // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
         if(success) {
           router.push("/home")
           toast.success("Note Deleted Successfully");
