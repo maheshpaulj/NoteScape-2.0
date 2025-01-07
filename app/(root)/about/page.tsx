@@ -91,14 +91,10 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold mb-4">Attribution</h2>
               <p className="text-muted-foreground">
                 Special thanks to:
-                <a href="https://www.textstudio.com/" className="text-primary hover:underline ml-1">
-                  Font Generator
-                </a>
-                {" and "}
                 <a href="https://www.flaticon.com/free-icons/3d-notes" className="text-primary hover:underline">
                   Freepik - Flaticon
                 </a>
-                {" for the 3D notes icons."}
+                {" for the illustrations."}
               </p>
             </section>
           </div>

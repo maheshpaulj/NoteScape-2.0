@@ -123,7 +123,7 @@ const Navbar = () => {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                    className="text-foreground hover:text-muted-foreground transition-colors"
                   >
                     {link.label}
                   </Link>
