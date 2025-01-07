@@ -3,7 +3,7 @@
 import { useRoom, useSelf } from "@liveblocks/react/suspense";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import * as Y from "yjs";
 import { BlockNoteView } from "@blocknote/shadcn";
@@ -17,20 +17,41 @@ import TranslateNote from "./TranslateNote";
 import ChatToNote from "./ChatToNote";
 import { useEdgeStore } from "@/lib/edgestore";
 
+import debounce from 'lodash/debounce';
+import { doc as DocFB, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "@/firebase";
+
 type BlockNoteProps = {
   doc: Y.Doc;
   provider: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  roomId: string;
 }
-function BlockNote({doc, provider}:BlockNoteProps){
-  const {resolvedTheme} = useTheme();
-  const userInfo = useSelf((me) => me.info);
-  const {edgestore} = useEdgeStore();
-  
-  const handleUpload = async (file:File) => {
-    const response = await edgestore.publicFiles.upload({file})
 
-    return response.url
+function BlockNote({ doc, provider, roomId }: BlockNoteProps) {
+  const { resolvedTheme } = useTheme();
+  const userInfo = useSelf((me) => me.info);
+  const { edgestore } = useEdgeStore();
+
+  const handleUpload = async (file: File) => {
+    const response = await edgestore.publicFiles.upload({ file });
+    return response.url;
   };
+
+  // Create a debounced function to update Firebase
+  const updateFirebase = useCallback(
+    debounce(async () => {
+      try {
+        const docRef = DocFB(db, 'users', userInfo.email, 'rooms', roomId);
+        
+        await updateDoc(docRef, {
+          updatedAt: serverTimestamp()
+        });
+      } catch (error) {
+        console.error('Error updating timestamp:', error);
+      }
+    }, 5000), // Debounce for 5 seconds
+    [userInfo.email, roomId]
+  );
 
   const editor: BlockNoteEditor = useCreateBlockNote({
     collaboration: {
@@ -44,6 +65,12 @@ function BlockNote({doc, provider}:BlockNoteProps){
     uploadFile: handleUpload
   });
 
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      updateFirebase.cancel();
+    };
+  }, [updateFirebase]);
 
   return (
     <div className="relative max-w-6xl mx-auto">
@@ -51,14 +78,15 @@ function BlockNote({doc, provider}:BlockNoteProps){
         editor={editor}
         className="min-h-screen"
         theme={resolvedTheme === "dark" ? "dark" : "light"}
+        onChange={updateFirebase}
       />
     </div>
-  )
+  );
 }
 
 export default function Editor({ noteId } : { noteId:string }) {
   
-  const room = useRoom() || noteId;
+  const room = useRoom();
   const [doc, setDoc] = useState<Y.Doc>();
   const [provider, setProvider] = useState<LiveblocksYjsProvider>();
 
@@ -81,7 +109,7 @@ export default function Editor({ noteId } : { noteId:string }) {
         <ChatToNote doc={doc} />
       </div>
       <div className="max-w-6xl mx-auto">
-        <BlockNote doc={doc} provider={provider} />
+        <BlockNote doc={doc} provider={provider} roomId={noteId}/>
       </div>
     </div>
   )

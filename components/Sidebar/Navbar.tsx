@@ -4,7 +4,7 @@ import React from "react"
 import { useParams } from "next/navigation"
 import { MenuIcon } from "lucide-react"
 import { Title } from "./Title"
-import { doc, DocumentData, DocumentReference } from "firebase/firestore"
+import { doc, DocumentData, DocumentReference, Timestamp } from "firebase/firestore"
 import { useUser } from "@clerk/nextjs"
 import { useDocumentData } from "react-firebase-hooks/firestore"
 import { db } from "@/firebase"
@@ -20,8 +20,8 @@ interface NavbarProps {
 
 interface RoomDocument extends DocumentData {
   title: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   role: "owner" | "editor";
   roomId: string;
   userId: string;

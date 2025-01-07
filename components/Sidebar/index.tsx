@@ -1,6 +1,6 @@
 'use client'
 import { cn } from "@/lib/utils"
-import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash } from "lucide-react"
+import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook } from "lucide-react"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import React, { ElementRef, useEffect, useRef, useState, useTransition } from "react"
 import {useMediaQuery} from 'usehooks-ts'
@@ -133,7 +133,7 @@ return (
           <Item label="Search" icon={Search} isSearch onClick={search.onOpen}/>
           <Item onClick={handleCreateNewNote} label='New Note' icon={PlusCircle} />
           <Item onClick={() => {router.push('/home')}} label='Home' icon={HomeIcon} />
-          <Item label="Settings" icon={Settings} onClick={settings.onOpen}/>
+          <Item onClick={() => {router.push('/allNotes')}} label='All Notes' icon={Notebook} />
           <Popover>
             <PopoverTrigger className="w-full">
               <Item label="Trash" icon={Trash} onClick={()=>{}}/>
@@ -145,9 +145,10 @@ return (
               <TrashBox />
             </PopoverContent>
           </Popover>
+          <Item label="Settings" icon={Settings} onClick={settings.onOpen}/>
         </div>
         <div className="mt-4">
-          <h2 className="text-start text-secondary-foreground font-semibold text-sm">My Documents</h2>
+          <h2 className="text-start text-secondary-foreground font-semibold text-sm">My Notes</h2>
           <DocumentList />
         </div>
         <div className="opacity-0 group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-primary/10

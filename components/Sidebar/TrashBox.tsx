@@ -9,13 +9,13 @@ import { Input } from "@/components/ui/input"
 import { ConfirmModal } from "@/components/Modals/ConfirmModal"
 import { useCollection } from "react-firebase-hooks/firestore"
 import { useUser } from "@clerk/nextjs"
-import { collectionGroup, doc, DocumentData, getDoc, query, where } from "firebase/firestore"
+import { collectionGroup, doc, DocumentData, getDoc, query, Timestamp, where } from "firebase/firestore"
 import { db } from "@/firebase"
 import { deleteNote, restoreNote } from "@/actions/actions"
 	
 interface RoomDocument extends DocumentData {
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   role: "owner" | "editor";
   roomId: string;
   userId: string;
@@ -166,6 +166,7 @@ return (
           key={note.roomId} role="button" onClick={() => onClick(note.roomId)}
           >
             <span className="truncate pl-2">
+              {note.icon}
               {note.title}
             </span>
             <div className="flex items-center">

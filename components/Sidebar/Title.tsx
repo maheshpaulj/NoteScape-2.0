@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DocumentData } from "firebase-admin/firestore"
 import { db } from "@/firebase"
-import { collectionGroup, doc, getDocs, query, updateDoc, where, writeBatch, getDoc } from "firebase/firestore"
+import { collectionGroup, doc, getDocs, query, updateDoc, where, writeBatch, getDoc, Timestamp } from "firebase/firestore"
 import { useDocumentData } from "react-firebase-hooks/firestore"
 import { useUser } from "@clerk/nextjs"
 import { ChevronRight } from "lucide-react"
@@ -14,8 +14,8 @@ import { useRouter } from "next/navigation"
 
 interface RoomDocument extends DocumentData {
   title: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   role: "owner" | "editor";
   roomId: string;
   userId: string;

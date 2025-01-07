@@ -5,6 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Github, Users, Sparkles, Cpu } from "lucide-react";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "NoteScape - About",
+};
 
 export default function AboutPage() {
   const features = [

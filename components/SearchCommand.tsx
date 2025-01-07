@@ -14,13 +14,13 @@ import {
 import { useSearch } from "@/hooks/useSearch";
 import { useEffect, useState } from "react";
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collectionGroup, DocumentData, query, where } from 'firebase/firestore';
+import { collectionGroup, DocumentData, query, Timestamp, where } from 'firebase/firestore';
 import { db } from '@/firebase';
 
 interface RoomDocument extends DocumentData {
   title: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
   role: "owner" | "editor";
   roomId: string;
   userId: string;

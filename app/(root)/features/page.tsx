@@ -1,6 +1,11 @@
 import { Spotlight } from "@/components/ui/spotlight";
 import { Footer } from "../_components/Footer";
 import { LucideIcon, NotebookPen, Users, Languages, Image, KeyRound, Cpu } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "NoteScape - Features",
+};
 
 interface FeatureSectionProps {
   title: string;

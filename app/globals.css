@@ -42,13 +42,13 @@ body,
   }
  
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 0 0% 12%;
     --foreground: 0 0% 98%;
  
-    --card: 0 0% 3.9%;
+    --card: 0 0% 9%;
     --card-foreground: 0 0% 98%;
  
-    --popover: 0 0% 3.9%;
+    --popover: 0 0% 9%;
     --popover-foreground: 0 0% 98%;
  
     --primary: 0 0% 98%;
@@ -83,4 +83,24 @@ body,
 
 .dark .bn-editor {
   background-color: #1f1f1f !important;
+}
+
+.dark .bn-shadcn  {
+  --background: 0 0% 9% !important;
+  --foreground: 0 0% 98% !important;
+  /* --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%; */
+  --popover: 0 0% 9% !important;
+  --popover-foreground: 0 0% 98% !important;
+  /* --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%; */
+  --muted: 0 0% 15% !important;
+  --muted-foreground: 0 0% 90% !important;
+  --accent: 0 0% 20% !important;
+  --accent-foreground: 0 0% 98% !important;
+  --border: 217.2 32.6% 17.5%;
+  --input: 0 0% 17.5% !important;
+  --ring: 0 0% 18% !important;
 }

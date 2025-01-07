@@ -24,10 +24,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   colorScheme: "dark light",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1e1e1e" }
-  ]
 }
 
 export const metadata: Metadata = {
@@ -35,6 +31,7 @@ export const metadata: Metadata = {
   description: "Transform your note-taking experience with NoteScape's AI-powered features including real-time collaboration, smart translation, and context-aware Q&A. Built with Next.js and Meta's Llama model.",
   keywords: "note-taking, AI, collaboration, Llama model, real-time, translation, Next.js",
   manifest: "/manifest.json",
+  icons: "logo.png",
   openGraph: {
     title: "NoteScape - AI-Powered Note-Taking Application",
     description: "Transform your note-taking experience with NoteScape's AI-powered features including real-time collaboration, smart translation, and context-aware Q&A.",
@@ -43,7 +40,7 @@ export const metadata: Metadata = {
     siteName: "NoteScape",
     images: [
       {
-        url: "/ss.png", // You'll need to add your actual OG image
+        url: "/assets/ss.png", // You'll need to add your actual OG image
         width: 1200,
         height: 630,
         alt: "NoteScape Preview"
@@ -54,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "NoteScape - AI-Powered Note-Taking Application",
     description: "Transform your note-taking experience with NoteScape's AI-powered features including real-time collaboration, smart translation, and context-aware Q&A.",
-    images: ["/ss.png"], // You'll need to add your actual Twitter card image
+    images: ["/assets/ss.png"], // You'll need to add your actual Twitter card image
   },
   robots: {
     index: true,
