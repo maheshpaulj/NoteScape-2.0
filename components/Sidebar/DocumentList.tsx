@@ -89,11 +89,11 @@ export function DocumentList() {
     setGroupedData(grouped);
   }, [data]);
 
-  const isParentArchived = (notes: RoomDocument[], parentId: string | null): boolean => {
-    if (!parentId) return false;
-    const parent = notes.find(note => note.roomId === parentId);
-    return parent ? parent.archived : false;
-  };
+  // const isParentArchived = (notes: RoomDocument[], parentId: string | null): boolean => {
+  //   if (!parentId) return false;
+  //   const parent = notes.find(note => note.roomId === parentId);
+  //   return parent ? parent.archived : false;
+  // };
 
   const renderAllNotes = (
     notes: RoomDocument[],

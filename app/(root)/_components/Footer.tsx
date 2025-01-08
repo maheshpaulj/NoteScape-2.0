@@ -14,7 +14,7 @@ return (
             </Link>
           </Button>
           <Button variant='ghost' size='sm' asChild>
-            <Link href={"https://github.com/CityIsBetter/notescape-2.0"} target="_blank">
+            <Link href={"https://github.com/maheshpaulj/notescape-2.0"} target="_blank">
               Github
             </Link>
           </Button>

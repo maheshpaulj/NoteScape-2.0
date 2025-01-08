@@ -43,7 +43,7 @@ export default function AboutPage() {
             </p>
             <div className="flex justify-center gap-4 pt-4">
               <Button className="gap-2" asChild>
-                <Link href={"https://github.com/CityIsBetter/notescape-2.0"} target="_blank">
+                <Link href={"https://github.com/maheshpaulj/notescape-2.0"} target="_blank">
                   <Github className="h-5 w-5" />
                   View on GitHub
                 </Link>

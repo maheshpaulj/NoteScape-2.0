@@ -38,7 +38,7 @@ export function Menu ({noteId, quickAccess, archived}:MenuProps) {
   function handleAddtoQuickAccess(id: string) {
       try {
         startTransition(async() => {
-          const {success} = await addNoteToQuickAccess(id, user?.emailAddresses[0].toString()!)
+          const {success} = await addNoteToQuickAccess(id, user?.emailAddresses[0].toString()!) // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
           if(success) toast.success("Note added to Quick Access Successfully");
         })
       } catch (error) {
@@ -50,7 +50,7 @@ export function Menu ({noteId, quickAccess, archived}:MenuProps) {
     function handleRemoveFromQuickAccess(id: string) {
       try {
         startTransition(async() => {
-          const {success} = await removeNoteFromQuickAccess(id, user?.emailAddresses[0].toString()!)
+          const {success} = await removeNoteFromQuickAccess(id, user?.emailAddresses[0].toString()!) // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
           if(success) toast.success("Note removed from Quick Access Successfully");
         })
       } catch (error) {

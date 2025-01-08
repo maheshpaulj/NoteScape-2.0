@@ -38,7 +38,7 @@ function BlockNote({ doc, provider, roomId }: BlockNoteProps) {
   };
 
   // Create a debounced function to update Firebase
-  const updateFirebase = useCallback(
+  const updateFirebase = useCallback( // eslint-disable-line react-hooks/exhaustive-deps 
     debounce(async () => {
       try {
         const docRef = DocFB(db, 'users', userInfo.email, 'rooms', roomId);
