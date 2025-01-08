@@ -28,6 +28,7 @@ interface RoomDocument extends DocumentData {
   archived: boolean;
   icon: string;
   coverImage: string;
+  quickAccess: boolean;
 }
 
 export function SearchCommand() {

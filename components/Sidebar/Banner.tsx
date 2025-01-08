@@ -51,7 +51,7 @@ return (
       <p>This note is in the Trash.</p>
       <Button className="border-white bg-transparent hover:bg-primary/5 text-white hover:text-white p-1 px-2
       h-auto font-normal" variant='outline' size='sm' onClick={e => handleRestore(e, noteId)}>
-        Restore page
+        Restore Note
       </Button>
        <ConfirmModal onConfirm={() => handleDelete(noteId)}>
         <Button className="border-white bg-transparent hover:bg-primary/5 text-white hover:text-white p-1 px-2

@@ -19,6 +19,7 @@ interface RoomDocument extends DocumentData {
   archived: boolean;
   icon: string;
   coverImage: string;
+  quickAccess: boolean;
 }
 
 function Page({params: {noteId}}: {params: {noteId: string}}) {

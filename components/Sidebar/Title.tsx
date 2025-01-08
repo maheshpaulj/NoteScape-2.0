@@ -23,6 +23,7 @@ interface RoomDocument extends DocumentData {
   archived: boolean;
   icon: string;
   coverImage: string;
+  quickAccess: boolean;
 }
 
 interface Breadcrumb {
@@ -135,7 +136,7 @@ export function Title({initialData, id, isOwner}: TitleProps) {
   return (
     <div className="flex items-center">
       <p className="flex items-center font-semibold text-sm">
-        {isOwner ? "My Documents" : "Shared with me"}
+        {isOwner ? "My Notes" : "Shared with me"}
         <ChevronRight className="text-xl" />
       </p>
       <div className="flex items-center">

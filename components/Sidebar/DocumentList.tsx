@@ -21,6 +21,7 @@ interface RoomDocument extends DocumentData {
   archived: boolean;
   icon: string;
   coverImage: string;
+  quickAccess: boolean;
 }
 
 export function DocumentList() {
@@ -31,7 +32,8 @@ export function DocumentList() {
   const [groupedData, setGroupedData] = useState<{
     owner: RoomDocument[];
     editor: RoomDocument[];
-  }>({ owner: [], editor: [] });
+    quickAccess: RoomDocument[];
+  }>({ owner: [], editor: [], quickAccess: [] });
 
   const onExpand = (documentId: string) => {
     setExpanded((prevExpanded) => ({
@@ -58,6 +60,7 @@ export function DocumentList() {
     const grouped = data.docs.reduce<{
       owner: RoomDocument[];
       editor: RoomDocument[];
+      quickAccess: RoomDocument[];
     }>(
       (acc, doc) => {
         const roomData = doc.data() as RoomDocument;
@@ -72,9 +75,15 @@ export function DocumentList() {
             ...roomData,
           });
         }
+        if (roomData.quickAccess) {
+          acc.quickAccess.push({
+            id: doc.id,
+            ...roomData,
+          })
+        }
         return acc;
       },
-      { owner: [], editor: [] }
+      { owner: [], editor: [], quickAccess: [] }
     );
 
     setGroupedData(grouped);
@@ -86,33 +95,15 @@ export function DocumentList() {
     return parent ? parent.archived : false;
   };
 
-  const renderDocuments = (
+  const renderAllNotes = (
     notes: RoomDocument[],
     parentId: string | null = null,
     depth: number = 0
   ) => {
-    const filteredNotes = notes.filter(note => !note.archived);
-    
-    // Separate notes into those with archived parents and those without
-    const notesWithArchivedParent = filteredNotes.filter(
-      note => note.parentNoteId && isParentArchived(notes, note.parentNoteId)
-    );
-    
-    const regularNotes = filteredNotes.filter(
-      note => {
-        // Show notes that either:
-        // 1. Have no parent (parentId is null) and match the current parentId parameter
-        // 2. Have a non-archived parent and match the current parentId parameter
-        return note.parentNoteId === parentId && !isParentArchived(notes, note.parentNoteId);
-      }
-    );
-
-    // If we're at the top level (parentId is null), include orphaned notes
-    const notesToRender = parentId === null 
-      ? [...regularNotes, ...notesWithArchivedParent]
-      : regularNotes;
-
-    return notesToRender.map((note) => (
+    const filteredNotes = notes
+      .filter(note => !note.archived && note.parentNoteId === parentId);
+  
+    return filteredNotes.map((note) => (
       <div key={note.roomId} style={{ paddingLeft: depth ? `30px` : undefined }}>
         <Item
           id={note.roomId}
@@ -123,9 +114,39 @@ export function DocumentList() {
           active={params.noteId === note.roomId}
           onExpand={() => onExpand(note.roomId)}
           expanded={expanded[note.roomId]}
-          isEditor={note.role === "editor" ? true : false}
+          isEditor={note.role === "editor"}
+          quickAccess={note.quickAccess}
         />
-        {expanded[note.roomId] && renderDocuments(notes, note.roomId, depth + 1)}
+        {expanded[note.roomId] && renderAllNotes(notes, note.roomId, depth + 1)}
+      </div>
+    ));
+  };
+  
+  const renderLimitedNotes = (
+    notes: RoomDocument[],
+    parentId: string | null = null,
+    depth: number = 0
+  ) => {
+    const filteredNotes = notes
+      .filter(note => !note.archived && note.parentNoteId === parentId)
+      .sort((a, b) => b.updatedAt?.nanoseconds - a.updatedAt?.nanoseconds)
+      .slice(0, 7);
+  
+    return filteredNotes.map((note) => (
+      <div key={note.roomId} style={{ paddingLeft: depth ? `30px` : undefined }}>
+        <Item
+          id={note.roomId}
+          onClick={() => onRedirect(note.roomId)}
+          label={note.title}
+          icon={FileIcon}
+          documentIcon={note.icon}
+          active={params.noteId === note.roomId}
+          onExpand={() => onExpand(note.roomId)}
+          expanded={expanded[note.roomId]}
+          isEditor={note.role === "editor"}
+          quickAccess={note.quickAccess}
+        />
+        {expanded[note.roomId] && renderLimitedNotes(notes, note.roomId, depth + 1)}
       </div>
     ));
   };
@@ -150,14 +171,30 @@ export function DocumentList() {
 
   return (
     <>
-      {groupedData.owner.length > 0 && renderDocuments(groupedData.owner)}
+      {groupedData.quickAccess.length > 0 && (
+        <>
+          <h3 className="text-sm font-semibold text-secondary-foreground mt-4 max-md:text-2xl">
+            Quick Access
+          </h3>
+          {renderAllNotes(groupedData.quickAccess)}
+        </>
+      )}
+
+      {groupedData.owner.length > 0 && (
+        <>
+          <h3 className="text-sm font-semibold text-secondary-foreground mt-4 max-md:text-2xl">
+            My Notes
+          </h3>
+          {renderLimitedNotes(groupedData.owner)}
+        </>
+      )}
 
       {groupedData.editor.length > 0 && (
         <>
-          <h3 className="text-sm font-semibold text-secondary-foreground mt-4">
+          <h3 className="text-sm font-semibold text-secondary-foreground mt-4 max-md:text-2xl">
             Shared with me
           </h3>
-          {renderDocuments(groupedData.editor)}
+          {renderLimitedNotes(groupedData.editor)}
         </>
       )}
     </>

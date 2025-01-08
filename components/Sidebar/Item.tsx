@@ -1,11 +1,11 @@
 'use client'
 import { cn } from "@/lib/utils"
-import { ChevronDown, ChevronRight, LucideIcon, MoreHorizontal, Plus, Trash } from "lucide-react"
+import { ChevronDown, ChevronRight, LucideIcon, MoreHorizontal, Plus, Star, Trash } from "lucide-react"
 import { Skeleton } from "../ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { useUser } from "@clerk/nextjs";
 import { startTransition } from "react";
-import { archiveNote, createNewNote, removeUserFromNote } from "@/actions/actions";
+import { addNoteToQuickAccess, archiveNote, createNewNote, removeNoteFromQuickAccess, removeUserFromNote } from "@/actions/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -32,9 +32,10 @@ interface ItemProps {
   onClick:() => void
   icon:LucideIcon
   isEditor?: boolean
+  quickAccess?: boolean
 }
 
-export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,level=0,onExpand,expanded, isEditor}:ItemProps) {
+export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,level=0,onExpand,expanded, isEditor, quickAccess}:ItemProps) {
   const ChevronIcon = expanded ? ChevronDown : ChevronRight
   const { user } = useUser();
   const router = useRouter();
@@ -87,8 +88,32 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
     }
   }
 
+  function handleAddtoQuickAccess(id: string) {
+    try {
+      startTransition(async() => {
+        const {success} = await addNoteToQuickAccess(id, user?.emailAddresses[0].toString()!)
+        if(success) toast.success("Note added to Quick Access Successfully");
+      })
+    } catch (error) {
+      toast.error("failed to add note to quick access");
+      console.error(error);
+    }
+  }
+
+  function handleRemoveFromQuickAccess(id: string) {
+    try {
+      startTransition(async() => {
+        const {success} = await removeNoteFromQuickAccess(id, user?.emailAddresses[0].toString()!)
+        if(success) toast.success("Note removed from Quick Access Successfully");
+      })
+    } catch (error) {
+      toast.error("failed to remove note from quick access");
+      console.error(error);
+    }
+  }
+
 return (
-    <div className={cn(`group min-h-[27px] text-sm py-1 pr-3 w-full hover:bg-primary/5
+    <div className={cn(`group min-h-[27px] text-sm max-md:text-xl py-1 pr-3 w-full hover:bg-primary/5
     flex items-center text-muted-foreground font-medium`,
     active && 'bg-primary/5 text-primary')}
      onClick={onClick} role="button" style={{paddingLeft:level ? `${(level * 12) + 12}px` :'12px'}}>
@@ -124,7 +149,17 @@ return (
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-60" align="start" side="right" forceMount>
-              <AlertDialog>
+              {!quickAccess ? (
+                <DropdownMenuItem onClick={() => handleAddtoQuickAccess(id)} className="cursor-pointer">
+                  <Star className="w-4 h-4 mr-2"/>
+                  Add to Quick Access
+                </DropdownMenuItem>) : (
+                <DropdownMenuItem onClick={() => handleRemoveFromQuickAccess(id)} className="cursor-pointer">
+                  <Star className="w-4 h-4 mr-2" fill="hsl(var(--foreground))"/>
+                  Remove from Quick Access
+                </DropdownMenuItem>
+              )}
+              {isEditor ? <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
                     <Trash className="w-4 h-4 mr-2"/>
@@ -141,19 +176,19 @@ return (
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction 
-                      onClick={() => {
-                        if(isEditor) {
-                          handleDelete(id)
-                        } else {
-                          handleArchive(id)
-                        }
-                      }}
+                      onClick={() => handleDelete(id)}
                     >
                       Continue
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              :
+              <DropdownMenuItem onClick={() => handleArchive(id)} className="cursor-pointer">
+                <Trash className="w-4 h-4 mr-2"/>
+                Delete
+              </DropdownMenuItem>
+              }
               <DropdownMenuSeparator/>
               <div className="text-xs text-muted-foreground p-2">
                 Last edited by: {user?.fullName}

@@ -30,6 +30,7 @@ export async function createNewNote(parentNoteId: string | null = null) {
             parentNoteId: parentNoteId,
             archived: false,
             title: "New Note",
+            quickAccess: false,
         });
 
     return { noteId: docRef.id };
@@ -121,7 +122,7 @@ export async function getAllChildNotes(roomId: string): Promise<string[]> {
     
     async function fetchChildren(noteId: string) {
         const snapshot = await adminDb
-            .collection("notes")
+            .collectionGroup("rooms")
             .where("parentNoteId", "==", noteId)
             .get();
             
@@ -331,6 +332,52 @@ export async function removeCoverFromNote(roomId: string) {
             
         parentRooms.docs.forEach((doc) => {
             batch.update(doc.ref, { coverImage: "" });
+        });
+         
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.log(error);
+        return { success: false };
+    }
+}
+
+export async function addNoteToQuickAccess(noteId: string, email: string) {
+    auth.protect();
+    try {
+        const batch = adminDb.batch();
+        // Get and update all room documents for the parent note
+        const parentRooms = await adminDb
+            .collectionGroup("rooms")
+            .where("roomId", "==", noteId)
+            .where("userId", "==", email)
+            .get();
+            
+        parentRooms.docs.forEach((doc) => {
+            batch.update(doc.ref, { quickAccess: true });
+        });
+         
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.log(error);
+        return { success: false };
+    }
+}
+
+export async function removeNoteFromQuickAccess(noteId: string, email: string) {
+    auth.protect();
+    try {
+        const batch = adminDb.batch();
+        // Get and update all room documents for the parent note
+        const parentRooms = await adminDb
+            .collectionGroup("rooms")
+            .where("roomId", "==", noteId)
+            .where("userId", "==", email)
+            .get();
+            
+        parentRooms.docs.forEach((doc) => {
+            batch.update(doc.ref, { quickAccess: false });
         });
          
         await batch.commit();

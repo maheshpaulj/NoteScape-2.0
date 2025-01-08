@@ -29,6 +29,7 @@ interface RoomDocument extends DocumentData {
   archived: boolean;
   icon: string;
   coverImage: string;
+  quickAccess: boolean;
 }
 
 export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
@@ -73,7 +74,7 @@ export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
           <Title initialData={roomData} id={roomId} isOwner={isOwner} />
           <div className="flex gap-x-2 items-center">
             {isOwner && <InviteUser />}
-            <Menu noteId={roomId} />
+            <Menu noteId={roomId} quickAccess={roomData.quickAccess} archived={roomData.archived} />
           </div>
         </div>
       </nav>

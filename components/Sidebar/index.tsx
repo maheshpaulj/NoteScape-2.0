@@ -148,7 +148,6 @@ return (
           <Item label="Settings" icon={Settings} onClick={settings.onOpen}/>
         </div>
         <div className="mt-4">
-          <h2 className="text-start text-secondary-foreground font-semibold text-sm">My Notes</h2>
           <DocumentList />
         </div>
         <div className="opacity-0 group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-primary/10

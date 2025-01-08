@@ -38,6 +38,7 @@ interface RoomDocument extends DocumentData {
   archived: boolean;
   icon: string;
   coverImage: string;
+  quickAccess: boolean;
 }
 
 export default function NotesPage() {
@@ -114,13 +115,12 @@ export default function NotesPage() {
     router.push(`/notes/${noteId}`);
   };
 
-  const renderDocuments = (notes: RoomDocument[], depth = 0) => { // Replace with your timestamp
+  const renderDocuments = (notes: RoomDocument[]) => { // Replace with your timestamp
     return notes.map((note) => (
       <div
         key={note.roomId}
-        className={`group flex items-center gap-2 w-full p-2 rounded-lg cursor-pointer
+        className={`group flex items-center gap-2 w-full p-2 pl-3 rounded-lg cursor-pointer
           hover:bg-accent transition-colors duration-200`}
-        style={{ paddingLeft: `${depth * 24 + 12}px` }}
         onClick={() => onRedirect(note.roomId)}
       >
         <div className="flex items-center justify-between flex-1 gap-2">
@@ -153,7 +153,7 @@ export default function NotesPage() {
     <div className="h-full flex flex-col">
       <Card className="flex-1 border-none shadow-none">
         <CardHeader className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pl-10">
             <CardTitle className="text-xl font-medium">All Notes</CardTitle>
             <Button onClick={handleCreateNewNote} className="gap-2" disabled={isPending}>
               <Plus size={16} />
