@@ -69,8 +69,8 @@ export default function NotesPage() {
         if (sortCriterion === "title") {
           return a.title.localeCompare(b.title);
         }
-        const aDate = sortCriterion === "createdAt" ? a.createdAt.toDate() : a.updatedAt.toDate();
-        const bDate = sortCriterion === "createdAt" ? b.createdAt.toDate() : b.updatedAt.toDate();
+        const aDate = sortCriterion === "createdAt" ? a.createdAt?.toDate() : a.updatedAt?.toDate();
+        const bDate = sortCriterion === "createdAt" ? b.createdAt?.toDate() : b.updatedAt?.toDate();
         return bDate.getTime() - aDate.getTime(); // Descending order
       });
     };
@@ -124,11 +124,12 @@ export default function NotesPage() {
         onClick={() => onRedirect(note.roomId)}
       >
         <div className="flex items-center justify-between flex-1 gap-2">
-          <p>
+          <p className="flex flex-row space-x-2 items-center truncate">
             {note.icon || "📄"}
             <span className="truncate">{note.title}</span>
+            {note.archived && <span className="text-xs text-center h-5 bg-red-300 px-1 rounded-md border-2 border-red-700 text-red-700 border-dashed">trash</span>}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="flex text-xs text-muted-foreground">
             {formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })}
           </p>
         </div>

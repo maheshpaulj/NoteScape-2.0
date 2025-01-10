@@ -89,12 +89,6 @@ export function DocumentList() {
     setGroupedData(grouped);
   }, [data]);
 
-  // const isParentArchived = (notes: RoomDocument[], parentId: string | null): boolean => {
-  //   if (!parentId) return false;
-  //   const parent = notes.find(note => note.roomId === parentId);
-  //   return parent ? parent.archived : false;
-  // };
-
   const renderAllNotes = (
     notes: RoomDocument[],
     parentId: string | null = null,
@@ -129,7 +123,7 @@ export function DocumentList() {
   ) => {
     const filteredNotes = notes
       .filter(note => !note.archived && note.parentNoteId === parentId)
-      .sort((a, b) => b.updatedAt?.nanoseconds - a.updatedAt?.nanoseconds)
+      .sort((a, b) => b.updatedAt?.seconds - a.updatedAt?.seconds)
       .slice(0, 7);
   
     return filteredNotes.map((note) => (

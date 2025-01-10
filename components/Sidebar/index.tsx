@@ -11,8 +11,6 @@ import { createNewNote } from "@/actions/actions"
 import { DocumentList } from "./DocumentList"
 import { useSettings } from "@/hooks/useSettings"
 import { useSearch } from "@/hooks/useSearch"
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
-import { TrashBox } from "./TrashBox"
 import { Navbar } from "./Navbar"
 	
 
@@ -134,17 +132,7 @@ return (
           <Item onClick={handleCreateNewNote} label='New Note' icon={PlusCircle} />
           <Item onClick={() => {router.push('/home')}} label='Home' icon={HomeIcon} />
           <Item onClick={() => {router.push('/allNotes')}} label='All Notes' icon={Notebook} />
-          <Popover>
-            <PopoverTrigger className="w-full">
-              <Item label="Trash" icon={Trash} onClick={()=>{}}/>
-            </PopoverTrigger>
-            <PopoverContent
-              className="p-0 w-72 " 
-              side={isMobile ? "bottom" : "right"}
-            >
-              <TrashBox />
-            </PopoverContent>
-          </Popover>
+          <Item onClick={() => {router.push('/trash')}} label='Trash' icon={Trash} />
           <Item label="Settings" icon={Settings} onClick={settings.onOpen}/>
         </div>
         <div className="mt-4">

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ClerkProviderWrapper } from "@/components/Providers/ClerkProviderWrapper";
 import { ThemeProvider } from "@/components/Providers/ThemeProvider";
+import { Analytics } from "@vercel/analytics/react"
 
 import { Toaster } from "sonner";
 import { ModalProvider } from "@/components/Providers/ModalProvider";
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
   description: "Transform your note-taking experience with NoteScape's AI-powered features including real-time collaboration, smart translation, and context-aware Q&A. Built with Next.js and Meta's Llama model.",
   keywords: "note-taking, AI, collaboration, Llama model, real-time, translation, Next.js",
   manifest: "/manifest.json",
-  icons: "logo.png",
+  icons: "/logo.png",
   openGraph: {
     title: "NoteScape - AI-Powered Note-Taking Application",
     description: "Transform your note-taking experience with NoteScape's AI-powered features including real-time collaboration, smart translation, and context-aware Q&A.",
@@ -85,6 +86,7 @@ export default function RootLayout({
             </ThemeProvider>
           </EdgeStoreProvider>
         </ClerkProviderWrapper>
+        <Analytics />
       </body>
     </html>
   );
