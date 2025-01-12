@@ -32,7 +32,22 @@ export const metadata: Metadata = {
   description: "Transform your note-taking experience with NoteScape's AI-powered features including real-time collaboration, smart translation, and context-aware Q&A. Built with Next.js and Meta's Llama model.",
   keywords: "note-taking, AI, collaboration, Llama model, real-time, translation, Next.js",
   manifest: "/manifest.json",
-  icons: "/logo.png",
+    icons: {
+    icon: [
+      {
+        url: "/images/icons/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/images/icons/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+    ],
+  },
   openGraph: {
     title: "NoteScape - AI-Powered Note-Taking Application",
     description: "Transform your note-taking experience with NoteScape's AI-powered features including real-time collaboration, smart translation, and context-aware Q&A.",

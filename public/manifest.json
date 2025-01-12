@@ -4,7 +4,6 @@
   "description": "AI-powered note-taking application with real-time collaboration",
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
-  "prefer_related_applications": false,
   "display": "standalone",
   "scope": "/",
   "lang": "en",
@@ -58,7 +57,7 @@
     {
       "src": "/assets/ss.png",
       "type": "image/png",
-      "sizes": "2879x1555",
+      "sizes": "2881x1505",
       "form_factor": "wide"
     }
   ]
