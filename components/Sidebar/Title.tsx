@@ -135,11 +135,11 @@ export function Title({initialData, id, isOwner}: TitleProps) {
 
   return (
     <div className="flex items-center">
-      <p className="flex items-center font-semibold text-sm">
+      <p className="flex items-center font-semibold text-sm max-md:hidden">
         {isOwner ? "My Notes" : "Shared with me"}
         <ChevronRight className="text-xl" />
       </p>
-      <div className="flex items-center">
+      <div className="flex items-center max-md:hidden">
         {breadcrumbs.map((crumb, index) => (
           <React.Fragment key={crumb.id}>
             <div className="flex gap-x-1 items-center">
@@ -157,12 +157,12 @@ export function Title({initialData, id, isOwner}: TitleProps) {
                 />
               ) : (
                 <Button
-                  className="font-normal h-auto p-1"
+                  className="font-normal h-auto p-1 truncate"
                   variant="ghost"
                   size="sm"
                   onClick={crumb.id === id ? enableInput : () => router.push(`/notes/${crumb.id}`)}
                 >
-                  <span className="truncate">{crumb.id === id ? title : crumb.title}</span>
+                  <span>{crumb.id === id ? title : crumb.title}</span>
                 </Button>
               )}
             </div>
@@ -172,6 +172,10 @@ export function Title({initialData, id, isOwner}: TitleProps) {
           </React.Fragment>
         ))}
       </div>
+      <Button className="font-normal h-auto p-1 block md:hidden truncate" variant="ghost" size="sm">
+        {initialData?.icon}
+        <span>{initialData?.title}</span>
+      </Button>
     </div>
   );
 }

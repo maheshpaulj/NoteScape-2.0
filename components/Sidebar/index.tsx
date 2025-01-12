@@ -124,7 +124,7 @@ return (
         isMobile && 'opacity-100')} 
         onClick={collapse}
         role="button">
-          <ChevronsLeft className="w-6 h-6"/>
+          <ChevronsLeft className="w-6 h-6 max-lg:scale-150"/>
         </div>
         <div>
           <UserItem/>

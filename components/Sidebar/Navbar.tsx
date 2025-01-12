@@ -65,7 +65,7 @@ export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
       <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex gap-x-4 items-center">
         {isCollapsed && (
           <MenuIcon
-            className="w-12 h-12 text-muted-foreground"
+            className="w-10 h-10 text-muted-foreground"
             role="button"
             onClick={onResetWidth}
           />

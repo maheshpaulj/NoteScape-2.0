@@ -123,13 +123,13 @@ export default function NotesPage() {
           hover:bg-accent transition-colors duration-200`}
         onClick={() => onRedirect(note.roomId)}
       >
-        <div className="flex items-center justify-between flex-1 gap-2">
+        <div className="flex items-center justify-between flex-1 gap-2 truncate">
           <p className="flex flex-row space-x-2 items-center truncate">
             {note.icon || "📄"}
             <span className="truncate">{note.title}</span>
             {note.archived && <span className="text-xs text-center h-5 bg-red-300 px-1 rounded-md border-2 border-red-700 text-red-700 border-dashed">trash</span>}
           </p>
-          <p className="flex text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground text-nowrap">
             {formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })}
           </p>
         </div>

@@ -182,7 +182,7 @@ export default function TrashPage() {
                 {isExpanded ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground/50" /> : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />}
             </div>
           <div 
-            className="flex items-center justify-between flex-1 gap-2 cursor-pointer"
+            className="flex items-center justify-between flex-1 gap-2 cursor-pointer truncate"
             onClick={() => router.push(`/notes/${note.roomId}`)}
           >
             <p className="flex items-center gap-2 truncate">
