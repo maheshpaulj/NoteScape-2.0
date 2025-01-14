@@ -35,14 +35,14 @@ export const metadata: Metadata = {
     icons: {
     icon: [
       {
-        url: "/images/icons/icon-192.png",
+        url: "/images/icons/Icon-192.png",
         sizes: "192x192",
         type: "image/png",
       },
     ],
     apple: [
       {
-        url: "/images/icons/icon-192.png",
+        url: "/images/icons/Icon-192.png",
         sizes: "192x192",
         type: "image/png",
       },
