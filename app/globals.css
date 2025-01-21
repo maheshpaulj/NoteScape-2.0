@@ -104,3 +104,9 @@ body,
   --input: 0 0% 17.5% !important;
   --ring: 0 0% 18% !important;
 }
+
+@media (max-width: 640px) {
+  .bn-editor {
+    padding-inline: 13px !important;
+  }
+}
