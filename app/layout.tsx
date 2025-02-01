@@ -92,15 +92,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ClerkProviderWrapper>
-          <EdgeStoreProvider>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="notescape-theme">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="notescape-theme">
+          <ClerkProviderWrapper>
+            <EdgeStoreProvider>
               <Toaster position="bottom-right" />
               <ModalProvider />
               {children}
-            </ThemeProvider>
-          </EdgeStoreProvider>
-        </ClerkProviderWrapper>
+            </EdgeStoreProvider>
+          </ClerkProviderWrapper>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>
