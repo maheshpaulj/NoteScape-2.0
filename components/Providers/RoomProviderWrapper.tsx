@@ -3,10 +3,12 @@
 import { ClientSideSuspense, RoomProvider, useOthers } from "@liveblocks/react/suspense";
 import { Spinner } from "../Spinner";
 import LiveCursorProvider from "./LiveCursorProvider";
-import { doc, onSnapshot } from "firebase/firestore";
+import { collectionGroup, doc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useEffect, useState, useCallback } from "react";
 import NotesPage from "../NotesPage";
+import { useCollection } from "react-firebase-hooks/firestore";
+import { useUser } from "@clerk/nextjs";
 
 // Component to detect other users in the room
 function UsersPresenceDetector({ onPresenceChange }: { 
@@ -30,6 +32,12 @@ function RoomProviderWrapper({
 }) {
   const [useLiveblocks, setUseLiveblocks] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const { user } = useUser();
+
+  const [usersInRoom] = useCollection(
+    user && query(collectionGroup(db, "rooms"), where("roomId", "==", roomId))
+  );
 
   // Callback to switch to Liveblocks if others are present
   const handlePresenceChange = useCallback((hasOthers: boolean) => {
@@ -55,9 +63,13 @@ function RoomProviderWrapper({
     return <Spinner size="lg" className="mt-32 w-full" />;
   }
 
+  if (usersInRoom?.docs.length! == 1){
+    return <NotesPage noteId={roomId} />
+  }
+
   return (
     <RoomProvider id={roomId} initialPresence={{ cursor: null }}>
-      <ClientSideSuspense fallback={<Spinner size="lg" className="mt-32 w-full" />}>
+      <ClientSideSuspense fallback={<div className="flex flex-col items-center space-y-2 mt-32 w-full"><Spinner size="lg" /><p className="animate-pulse">Loading Collabrative Note...</p></div>}>
         <LiveCursorProvider>
           <UsersPresenceDetector onPresenceChange={handlePresenceChange} />
           {useLiveblocks ? children : <NotesPage noteId={roomId} />}

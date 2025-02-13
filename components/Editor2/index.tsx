@@ -96,7 +96,7 @@ export default function Editor({ noteId }: { noteId: string }) {
   }, [saveToFirebase]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="animate-pulse flex w-full justify-center">Loading...</div>;
   }
 
   return (
