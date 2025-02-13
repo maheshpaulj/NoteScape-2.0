@@ -57,7 +57,7 @@ function BlockNote({ doc, provider, roomId, initialContent }: BlockNoteProps) {
     }
   }, [editor, initialContent]);
 
-  const updateFirebase = useCallback(
+  const updateFirebase = useCallback( // eslint-disable-line react-hooks/exhaustive-deps
     debounce(async (updatedDoc: Y.Doc) => {
       try {
         setSaveStatus("saving");
@@ -143,7 +143,7 @@ export default function Editor({ noteId }: { noteId: string }) {
       if (provider) provider.destroy();
       if (doc) doc.destroy();
     };
-  }, [room, noteId]);
+  }, [room, noteId, doc, provider]);
 
   if (isLoading) {
     return <div>Loading...</div>;

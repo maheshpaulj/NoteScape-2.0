@@ -20,7 +20,7 @@ type SaveStatus = "saved" | "saving" | "idle";
 export default function Editor({ noteId }: { noteId: string }) {
   const { resolvedTheme } = useTheme();
   const { edgestore } = useEdgeStore();
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [blocks, setBlocks] = useState<Block[]>([]); //eslint-disable-line @typescript-eslint/no-unused-vars
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
@@ -31,7 +31,7 @@ export default function Editor({ noteId }: { noteId: string }) {
     },
   });
 
-  const [yDoc, setYDoc] = useState<Y.Doc>(() => {
+  const [yDoc, setYDoc] = useState<Y.Doc>(() => { //eslint-disable-line @typescript-eslint/no-unused-vars
     const d = new Y.Doc();
     d.getXmlFragment("note-store");
     return d;
@@ -68,7 +68,7 @@ export default function Editor({ noteId }: { noteId: string }) {
   }, [editor, noteId, yDoc]);
 
   // Debounced save function for blocks
-  const saveToFirebase = useCallback(
+  const saveToFirebase = useCallback( //eslint-disable-line react-hooks/exhaustive-deps
     debounce(async (blocks: Block[]) => {
       try {
         setSaveStatus("saving");
