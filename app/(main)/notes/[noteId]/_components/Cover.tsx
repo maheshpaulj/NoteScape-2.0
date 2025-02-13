@@ -17,9 +17,10 @@ import Avatars from "./Avatars"
 interface CoverProps {
   url?:string
   preview?:boolean
+  showAvatar?: boolean
 }
 
-export function Cover ({url,preview}:CoverProps) {
+export function Cover ({url, preview, showAvatar}:CoverProps) {
 
   const {edgestore} = useEdgeStore();
   const params = useParams();
@@ -51,7 +52,7 @@ return (
       {!!url && (
         <Image className="object-cover" src={url} alt='Cover' fill/>
       )}
-      <div className="relative"><Avatars /></div>
+      {showAvatar && <div className="relative"><Avatars /></div>}
       {url && !preview && (
         <div className="opacity-0 group-hover:opacity-100 absolute bottom-5 right-5 flex gap-x-2 items-center">
           <Button className="text-muted-foreground text-xs" variant='outline' size='sm' onClick={() => coverIamge.onReplace(url)}>
