@@ -101,7 +101,7 @@ export default function Editor({ noteId }: { noteId: string }) {
 
   return (
     <div className="relative">
-      <div className="flex space-x-2 bg-red-400">
+      <div className="flex space-x-2">
         <TranslateNote doc={yDoc} />
         <ChatToNote doc={yDoc} />
       </div>
