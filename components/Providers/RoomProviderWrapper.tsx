@@ -37,7 +37,7 @@ function RoomProviderWrapper({
 
   const [usersInRoom] = useCollection(
     user && query(collectionGroup(db, "rooms"), where("roomId", "==", roomId))
-  );
+  ) || 1;
 
   // Callback to switch to Liveblocks if others are present
   const handlePresenceChange = useCallback((hasOthers: boolean) => {
@@ -63,7 +63,7 @@ function RoomProviderWrapper({
     return <Spinner size="lg" className="mt-32 w-full" />;
   }
 
-  if (usersInRoom?.docs.length! == 1){
+  if (usersInRoom?.docs.length == 1){
     return <NotesPage noteId={roomId} />
   }
 
