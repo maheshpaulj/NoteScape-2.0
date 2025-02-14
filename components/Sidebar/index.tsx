@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook } from "lucide-react"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import React, { ElementRef, useEffect, useRef, useState, useTransition } from "react"
-import {useMediaQuery} from 'usehooks-ts'
+import { useMediaQuery } from 'usehooks-ts'
 import { UserItem } from "./UserItem"
 import { Item } from "./Item"
 import { toast } from "sonner"
@@ -12,9 +12,8 @@ import { DocumentList } from "./DocumentList"
 import { useSettings } from "@/hooks/useSettings"
 import { useSearch } from "@/hooks/useSearch"
 import { Navbar } from "./Navbar"
-	
 
-export function Sidebar () {
+export function Sidebar() {
   const pathname = usePathname();
   const settings = useSettings();
   const params = useParams();
@@ -25,9 +24,10 @@ export function Sidebar () {
   const isResizingRef = useRef(false)
   const sidebarRef = useRef<ElementRef<'aside'>>(null)
   const navbarRef = useRef<ElementRef<'div'>>(null)
-  const [isResetting,setIsResetting] = useState(false)
-  const [isCollapsed,setIsCollapsed] = useState(isMobile)
-  const [ isPending, startTransition ] = useTransition(); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const touchStartXRef = useRef<number>(0)
+  const [isResetting, setIsResetting] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(isMobile)
+  const [isPending, startTransition] = useTransition(); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   useEffect(() => {
     if (isMobile) {
@@ -35,24 +35,44 @@ export function Sidebar () {
     } else {
       resetWidth()
     }
-  },[isMobile]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMobile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (isMobile) {
       collapse()
     }
-  },[pathname,isMobile])
+  }, [pathname, isMobile])
 
-  const handleMouseDown = (event:React.MouseEvent<HTMLDivElement,MouseEvent>) => {
+  const handleTouchStart = (event: React.TouchEvent) => {
+    touchStartXRef.current = event.touches[0].clientX
+  }
+
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (!isMobile) return
+
+    const touchCurrentX = event.touches[0].clientX
+    const diff = touchStartXRef.current - touchCurrentX
+
+    // Swipe left to close
+    if (diff > 50 && !isCollapsed) {
+      collapse()
+    }
+    // Swipe right to open
+    else if (diff < -50 && isCollapsed) {
+      resetWidth()
+    }
+  }
+
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.preventDefault()
     event.stopPropagation()
 
     isResizingRef.current = true
-    document.addEventListener('mousemove',handleMouseMove)
-    document.addEventListener('mouseup',handleMouseUp)
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
   }
 
-  const handleMouseMove = (event:MouseEvent) => {
+  const handleMouseMove = (event: MouseEvent) => {
     if (!isResizingRef.current) return
     let newWidth = event.clientX
 
@@ -61,15 +81,15 @@ export function Sidebar () {
 
     if (sidebarRef.current && navbarRef.current) {
       sidebarRef.current.style.width = `${newWidth}px`
-      navbarRef.current.style.setProperty("left",`${newWidth}px`)
-      navbarRef.current.style.setProperty("width",`calc(100% - ${newWidth}px)`)
+      navbarRef.current.style.setProperty("left", `${newWidth}px`)
+      navbarRef.current.style.setProperty("width", `calc(100% - ${newWidth}px)`)
     }
-  } 
+  }
 
   const handleMouseUp = () => {
     isResizingRef.current = false
-    document.removeEventListener("mousemove",handleMouseMove)
-    document.removeEventListener('mouseup',handleMouseUp)
+    document.removeEventListener("mousemove", handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
   }
 
   const resetWidth = () => {
@@ -78,8 +98,8 @@ export function Sidebar () {
       setIsResetting(true)
 
       sidebarRef.current.style.width = isMobile ? '100%' : '240px'
-      navbarRef.current.style.setProperty("width",isMobile ? '0' : 'calc(100% - 240px)')
-      navbarRef.current.style.setProperty('left',isMobile ? '100%' :'240px')
+      navbarRef.current.style.setProperty("width", isMobile ? '0' : 'calc(100% - 240px)')
+      navbarRef.current.style.setProperty('left', isMobile ? '100%' : '240px')
       setTimeout(() => {
         setIsResetting(false)
       }, 300);
@@ -92,74 +112,97 @@ export function Sidebar () {
       setIsResetting(true)
 
       sidebarRef.current.style.width = '0'
-      navbarRef.current.style.setProperty('width','100%')
-      navbarRef.current.style.setProperty('left','0')
-      setTimeout(() => setIsResetting(false),300)
+      navbarRef.current.style.setProperty('width', '100%')
+      navbarRef.current.style.setProperty('left', '0')
+      setTimeout(() => setIsResetting(false), 300)
     }
   }
-  
-    const handleCreateNewNote = () => {
-      try {
-        startTransition(async() => {
-          const {noteId} = await createNewNote();
-          router.push(`/notes/${noteId}`);
-        })
-        toast.success("New note created");
-      } catch (error) {
-        toast.error("failed to create a new note");
-        console.error(error);
-      }
+
+  const handleCreateNewNote = () => {
+    try {
+      startTransition(async () => {
+        const { noteId } = await createNewNote();
+        router.push(`/notes/${noteId}`);
+        if (isMobile) {
+          collapse();
+        }
+      })
+      toast.success("New note created");
+    } catch (error) {
+      toast.error("failed to create a new note");
+      console.error(error);
     }
+  }
 
-return (
+  // Handle item click for mobile
+  const handleItemClick = (action: () => void) => {
+    return () => {
+      action();
+      if (isMobile) {
+        collapse();
+      }
+    };
+  };
+
+  return (
     <>
-    <aside className={cn(`group/sidebar h-full bg-secondary overflow-y-auto overflow-x-hidden relative flex flex-col w-60 z-[99999]`,
-    isResetting && 'transition-all ease-in-out duration-300',
-    isMobile && 'w-0',
-    !isCollapsed && "px-2")}
-    ref={sidebarRef}>
-      <div>
-        <div className={cn(`w-6 h-6 text-muted-foreground rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600 absolute
-        top-3 right-2 opacity-0 group-hover/sidebar:opacity-100 transition`,
-        isMobile && 'opacity-100')} 
-        onClick={collapse}
-        role="button">
-          <ChevronsLeft className="w-6 h-6 max-lg:scale-150"/>
-        </div>
+      <aside
+        className={cn(`group/sidebar h-full bg-secondary overflow-y-auto overflow-x-hidden relative flex flex-col w-60 z-[99999]`,
+          isResetting && 'transition-all ease-in-out duration-300',
+          isMobile && 'w-0',
+          isMobile && !isCollapsed && "overflow-hidden",
+          !isCollapsed && "px-2")}
+        ref={sidebarRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
         <div>
-          <UserItem/>
-          <Item label="Search" icon={Search} isSearch onClick={search.onOpen}/>
-          <Item onClick={handleCreateNewNote} label='New Note' icon={PlusCircle} />
-          <Item onClick={() => {router.push('/home')}} label='Home' icon={HomeIcon} />
-          <Item onClick={() => {router.push('/allNotes')}} label='All Notes' icon={Notebook} />
-          <Item onClick={() => {router.push('/trash')}} label='Trash' icon={Trash} />
-          <Item label="Settings" icon={Settings} onClick={settings.onOpen}/>
+          <div
+            className={cn(`w-6 h-6 text-muted-foreground rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600 absolute
+              top-3 right-2 opacity-0 group-hover/sidebar:opacity-100 transition`,
+              isMobile && 'opacity-100')}
+            onClick={collapse}
+            role="button"
+          >
+            <ChevronsLeft className="w-6 h-6 max-lg:scale-150" />
+          </div>
+          <div>
+            <UserItem />
+            <Item label="Search" icon={Search} isSearch onClick={handleItemClick(search.onOpen)} />
+            <Item onClick={handleItemClick(handleCreateNewNote)} label='New Note' icon={PlusCircle} />
+            <Item onClick={handleItemClick(() => router.push('/home'))} label='Home' icon={HomeIcon} />
+            <Item onClick={handleItemClick(() => router.push('/allNotes'))} label='All Notes' icon={Notebook} />
+            <Item onClick={handleItemClick(() => router.push('/trash'))} label='Trash' icon={Trash} />
+            <Item label="Settings" icon={Settings} onClick={handleItemClick(settings.onOpen)} />
+          </div>
+          <div className="mt-4">
+            <DocumentList />
+          </div>
+          <div
+            className="opacity-0 group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-primary/10
+            right-0 top-0"
+            onMouseDown={handleMouseDown}
+            onClick={resetWidth}
+          />
         </div>
-        <div className="mt-4">
-          <DocumentList />
-        </div>
-        <div className="opacity-0 group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-primary/10
-        right-0 top-0"
-        onMouseDown={handleMouseDown}
-        onClick={resetWidth}>
-
-        </div>
+      </aside>
+      <div
+        className={cn(`absolute top-0 z-[99999] left-60 w-[calc(100%-240px)]`,
+          isResetting && 'transition-all ease-in-out duration-300',
+          isMobile && 'left-0 w-full')}
+        ref={navbarRef}
+      >
+        {!!params.noteId ? (
+          <Navbar
+            isCollapsed={isCollapsed}
+            onResetWidth={resetWidth}
+          />
+        ) : (
+          <nav className="bg-transparent px-3 py-2 w-full">
+            {isCollapsed && <MenuIcon className="w-6 h-6 text-muted-foreground" onClick={resetWidth} role="button" />}
+          </nav>
+        )}
       </div>
-    </aside>
-    <div className={cn(`absolute top-0 z-[99999] left-60 w-[calc(100%-240px)]`,
-    isResetting && 'transition-all ease-in-out duration-300',
-    isMobile && 'left-0 w-full')} ref={navbarRef}>
-      {!!params.noteId ? (
-        <Navbar
-          isCollapsed={isCollapsed}
-          onResetWidth={resetWidth}
-        />
-      ): (
-        <nav className="bg-transparent px-3 py-2 w-full">
-          {isCollapsed && <MenuIcon className="w-6 h-6 text-muted-foreground" onClick={resetWidth} role="button"/>}
-        </nav>
-      )}
-    </div>
     </>
-)
+  )
 }
