@@ -114,7 +114,7 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
 
 return (
     <div className={cn(`group min-h-[27px] text-sm max-md:text-xl py-1 pr-3 w-full hover:bg-primary/5
-    flex items-center text-muted-foreground font-medium`,
+    flex items-center text-muted-foreground font-medium touch-none`,
     active && 'bg-primary/5 text-primary')}
      onClick={onClick} role="button" style={{paddingLeft:level ? `${(level * 12) + 12}px` :'12px'}}>
       {!!id && (

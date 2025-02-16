@@ -1,8 +1,8 @@
 'use client'
 import { cn } from "@/lib/utils"
-import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook } from "lucide-react"
+import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook, User } from "lucide-react"
 import { useParams, usePathname, useRouter } from "next/navigation"
-import React, { ElementRef, useEffect, useRef, useState, useTransition } from "react"
+import React, { ElementRef, useEffect, useRef, useState, useTransition, TouchEvent } from "react"
 import { useMediaQuery } from 'usehooks-ts'
 import { UserItem } from "./UserItem"
 import { Item } from "./Item"
@@ -43,23 +43,22 @@ export function Sidebar() {
     }
   }, [pathname, isMobile])
 
-  const handleTouchStart = (event: React.TouchEvent) => {
-    touchStartXRef.current = event.touches[0].clientX
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX
   }
 
-  const handleTouchMove = (event: React.TouchEvent) => {
+  const handleTouchMove = (e: TouchEvent) => {
     if (!isMobile) return
 
-    const touchCurrentX = event.touches[0].clientX
-    const diff = touchStartXRef.current - touchCurrentX
+    const touchCurrentX = e.touches[0].clientX
+    const diff = touchCurrentX - touchStartXRef.current
 
-    // Swipe left to close
-    if (diff > 50 && !isCollapsed) {
-      collapse()
-    }
-    // Swipe right to open
-    else if (diff < -50 && isCollapsed) {
+    if (isCollapsed && diff > 50) {
+      // Swipe right to open
       resetWidth()
+    } else if (!isCollapsed && diff < -50) {
+      // Swipe left to close
+      collapse()
     }
   }
 
@@ -123,9 +122,6 @@ export function Sidebar() {
       startTransition(async () => {
         const { noteId } = await createNewNote();
         router.push(`/notes/${noteId}`);
-        if (isMobile) {
-          collapse();
-        }
       })
       toast.success("New note created");
     } catch (error) {
@@ -134,23 +130,12 @@ export function Sidebar() {
     }
   }
 
-  // Handle item click for mobile
-  const handleItemClick = (action: () => void) => {
-    return () => {
-      action();
-      if (isMobile) {
-        collapse();
-      }
-    };
-  };
-
   return (
     <>
       <aside
         className={cn(`group/sidebar h-full bg-secondary overflow-y-auto overflow-x-hidden relative flex flex-col w-60 z-[99999]`,
           isResetting && 'transition-all ease-in-out duration-300',
           isMobile && 'w-0',
-          isMobile && !isCollapsed && "overflow-hidden",
           !isCollapsed && "px-2")}
         ref={sidebarRef}
         onTouchStart={handleTouchStart}
@@ -168,12 +153,37 @@ export function Sidebar() {
           </div>
           <div>
             <UserItem />
-            <Item label="Search" icon={Search} isSearch onClick={handleItemClick(search.onOpen)} />
-            <Item onClick={handleItemClick(handleCreateNewNote)} label='New Note' icon={PlusCircle} />
-            <Item onClick={handleItemClick(() => router.push('/home'))} label='Home' icon={HomeIcon} />
-            <Item onClick={handleItemClick(() => router.push('/allNotes'))} label='All Notes' icon={Notebook} />
-            <Item onClick={handleItemClick(() => router.push('/trash'))} label='Trash' icon={Trash} />
-            <Item label="Settings" icon={Settings} onClick={handleItemClick(settings.onOpen)} />
+            <Item 
+              label="Search" 
+              icon={Search} 
+              isSearch 
+              onClick={search.onOpen}
+            />
+            <Item 
+              onClick={handleCreateNewNote} 
+              label='New Note' 
+              icon={PlusCircle}
+            />
+            <Item 
+              onClick={() => router.push('/home')} 
+              label='Home' 
+              icon={HomeIcon}
+            />
+            <Item 
+              onClick={() => router.push('/allNotes')} 
+              label='All Notes' 
+              icon={Notebook}
+            />
+            <Item 
+              onClick={() => router.push('/trash')} 
+              label='Trash' 
+              icon={Trash}
+            />
+            <Item 
+              label="Settings" 
+              icon={Settings} 
+              onClick={settings.onOpen}
+            />
           </div>
           <div className="mt-4">
             <DocumentList />

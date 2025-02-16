@@ -155,7 +155,7 @@ export default function Editor({ noteId }: { noteId: string }) {
 
   return (
     <div>
-      <div className="flex space-x-2">
+      <div className="flex space-x-2 mb-2">
         <TranslateNote doc={doc} />
         <ChatToNote doc={doc} />
       </div>

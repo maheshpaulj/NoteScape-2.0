@@ -241,7 +241,7 @@ export default function TrashPage() {
     <div className="h-full flex flex-col">
       <Card className="flex-1 border-none shadow-none">
         <CardHeader className="space-y-4">
-          <div className="flex items-center justify-between pl-10">
+          <div className="flex items-center justify-between mt-4">
             <CardTitle className="text-xl font-medium">Trash</CardTitle>
           </div>
           <div className="flex items-center gap-2">

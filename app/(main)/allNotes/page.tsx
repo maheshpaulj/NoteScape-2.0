@@ -154,7 +154,7 @@ export default function NotesPage() {
     <div className="h-full flex flex-col">
       <Card className="flex-1 border-none shadow-none">
         <CardHeader className="space-y-4">
-          <div className="flex items-center justify-between pl-10">
+          <div className="flex items-center justify-between mt-4">
             <CardTitle className="text-xl font-medium">All Notes</CardTitle>
             <Button onClick={handleCreateNewNote} className="gap-2" disabled={isPending}>
               <Plus size={16} />
@@ -183,13 +183,13 @@ export default function NotesPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setSortCriterion("updatedAt")}>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setSortCriterion("updatedAt")}>
                   Last Updated
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortCriterion("title")}>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setSortCriterion("title")}>
                   Title
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortCriterion("createdAt")}>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setSortCriterion("createdAt")}>
                   Created Date
                 </DropdownMenuItem>
               </DropdownMenuContent>
