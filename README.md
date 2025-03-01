@@ -17,7 +17,7 @@ AI-powered note-taking application with real-time collaboration capabilities.
 
 ## ✨ Features
 
-- **Real-time Collaboration**: Work together with live cursors and text selection powered by Liveblocks
+- **Real-time Collaboration**: Work together with live cursors and text selection powered by Liveblocks.
 - **AI Integration**: Leverages Meta's Llama model for intelligent features
   - Smart note translation
   - Context-aware question answering
