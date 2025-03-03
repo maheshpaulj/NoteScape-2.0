@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { createNewNote } from '@/actions/actions';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@clerk/nextjs';
-import { PlusCircle, Pin, Clock, Search } from 'lucide-react';
+import { PlusCircle, Pin, Clock, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { query, collectionGroup, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { Spinner } from '@/components/Spinner';
 
 interface NoteType {
   roomId: string;
@@ -25,11 +26,15 @@ export default function Page() {
   const { user } = useUser();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [allNotes, setAllNotes] = useState<NoteType[]>([]);
   const [recentNotes, setRecentNotes] = useState<NoteType[]>([]);
   const [pinnedNotes, setPinnedNotes] = useState<NoteType[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [showText, setShowText] = useState(window.innerWidth > 768);
+  const [expandedRecent, setExpandedRecent] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<NoteType[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
   useEffect(() => {
     const handleResize = () => setShowText(window.innerWidth > 768);
@@ -53,24 +58,27 @@ export default function Page() {
         
         const snapshot = await getDocs(notesQuery);
         
-        const allNotes = snapshot.docs.map(doc => ({
+        const allFetchedNotes = snapshot.docs.map(doc => ({
           ...doc.data(),
           roomId: doc.id
         })) as NoteType[];
         
         // Filter in memory
-        const filteredNotes = allNotes.filter(note => !note.archived);
+        const filteredNotes = allFetchedNotes.filter(note => !note.archived);
         
         // Get pinned notes
         const pinnedData = filteredNotes.filter(note => note.quickAccess);
         
-        // Get recent notes (excluding pinned)
-        const recentData = filteredNotes
+        // All non-pinned notes sorted by date
+        const nonPinnedNotes = filteredNotes
           .filter(note => !note.quickAccess)
-          .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0))
-          .slice(0, 6);
+          .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
         
-        setRecentNotes(recentData);
+        // Initial recent notes (first 6)
+        const initialRecentNotes = nonPinnedNotes.slice(0, 6);
+        
+        setAllNotes(filteredNotes);
+        setRecentNotes(initialRecentNotes);
         setPinnedNotes(pinnedData);
       } catch (error) {
         console.error('Error fetching notes:', error);
@@ -81,6 +89,24 @@ export default function Page() {
     
     fetchNotes();
   }, [user]);
+
+  // Handle search functionality
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setIsSearching(false);
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    
+    const lowerQuery = searchQuery.toLowerCase();
+    const results = allNotes.filter(note => 
+      note.title?.toLowerCase().includes(lowerQuery)
+    );
+    
+    setSearchResults(results);
+  }, [searchQuery, allNotes]);
 
   const handleCreateNewNote = () => {
     startTransition(async() => {
@@ -97,6 +123,27 @@ export default function Page() {
       day: 'numeric',
       year: 'numeric'
     }).format(date);
+  };
+  
+  const toggleShowMore = () => {
+    setExpandedRecent(!expandedRecent);
+    
+    if (!expandedRecent) {
+      // Show all non-pinned notes
+      const nonPinnedNotes = allNotes
+        .filter(note => !note.quickAccess)
+        .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+      
+      setRecentNotes(nonPinnedNotes);
+    } else {
+      // Show only first 6 notes
+      const nonPinnedNotes = allNotes
+        .filter(note => !note.quickAccess)
+        .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0))
+        .slice(0, 6);
+      
+      setRecentNotes(nonPinnedNotes);
+    }
   };
   
   interface NoteCardProps {
@@ -131,13 +178,46 @@ export default function Page() {
     title: string;
     icon: React.ReactNode;
     emptyMessage: string;
+    showToggle?: boolean;
+    isExpanded?: boolean;
+    onToggle?: () => void;
   }
   
-  const NotesGrid = ({ notes, title, icon, emptyMessage }: NotesGridProps) => (
+  const NotesGrid = ({ 
+    notes, 
+    title, 
+    icon, 
+    emptyMessage,
+    showToggle = false,
+    isExpanded = false,
+    onToggle
+  }: NotesGridProps) => (
     <div className="mb-8">
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <h2 className="text-xl font-semibold">{title}</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-xl font-semibold">{title}</h2>
+        </div>
+        {showToggle && notes.length > 0 && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onToggle}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            {isExpanded ? (
+              <>
+                <span>Show less</span>
+                <ChevronUp className="h-4 w-4" />
+              </>
+            ) : (
+              <>
+                <span>Show more</span>
+                <ChevronDown className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+        )}
       </div>
       {notes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -169,13 +249,13 @@ export default function Page() {
           <input
             type="text"
             placeholder="Search notes..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg bg-border focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full pl-10 pr-4 py-2 border rounded-lg bg-border focus:outline-none focus:ring-2 focus:ring-red-accent "
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          />
         </div>
         {/* Button to create new note */}
-        <div className="">
+        <div>
           <Button 
             onClick={handleCreateNewNote} 
             disabled={isPending}
@@ -189,10 +269,10 @@ export default function Page() {
       
       {loading ? (
         <div className="flex flex-col items-center justify-center flex-1 space-y-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-t-2 border-primary"></div>
+          <Spinner size={"lg"} />
           <p className="text-muted-foreground">Loading your notes...</p>
         </div>
-      ) : recentNotes.length === 0 && pinnedNotes.length === 0 ? (
+      ) : recentNotes.length === 0 && pinnedNotes.length === 0 && !isSearching ? (
         <div className="flex flex-col justify-center items-center space-y-4 flex-1">
           <Image 
             src="/assets/empty.png" 
@@ -218,24 +298,41 @@ export default function Page() {
         </div>
       ) : (
         <>
-          {/* Notes sections */}
-          <div className="flex-1 overflow-auto pb-10">
-            {pinnedNotes.length > 0 && (
+          {/* Search results */}
+          {isSearching && (
+            <div className="flex-1 overflow-auto pb-10">
               <NotesGrid 
-                notes={pinnedNotes} 
-                title="Pinned" 
-                icon={<Pin className="h-5 w-5" />}
-                emptyMessage="No pinned notes yet" 
+                notes={searchResults} 
+                title={`Search Results (${searchResults.length})`} 
+                icon={<Search className="h-5 w-5" />}
+                emptyMessage="No notes found matching your search" 
               />
-            )}
-            
-            <NotesGrid 
-              notes={recentNotes} 
-              title="Recent" 
-              icon={<Clock className="h-5 w-5" />}
-              emptyMessage="No recent notes yet" 
-            />
-          </div>
+            </div>
+          )}
+          
+          {/* Regular notes sections */}
+          {!isSearching && (
+            <div className="flex-1 overflow-auto pb-10">
+              {pinnedNotes.length > 0 && (
+                <NotesGrid 
+                  notes={pinnedNotes} 
+                  title="Pinned" 
+                  icon={<Pin className="h-5 w-5" />}
+                  emptyMessage="No pinned notes yet" 
+                />
+              )}
+              
+              <NotesGrid 
+                notes={recentNotes} 
+                title="Recent" 
+                icon={<Clock className="h-5 w-5" />}
+                emptyMessage="No recent notes yet"
+                showToggle={allNotes.filter(note => !note.quickAccess).length > 6}
+                isExpanded={expandedRecent}
+                onToggle={toggleShowMore}
+              />
+            </div>
+          )}
         </>
       )}
     </div>

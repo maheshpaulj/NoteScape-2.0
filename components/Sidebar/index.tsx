@@ -190,10 +190,13 @@ export function Sidebar() {
           </div>
           <div
             className="opacity-0 group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-primary/10
-            right-0 top-0"
+            right-0 top-0 max-sm:hidden z-10"
             onMouseDown={handleMouseDown}
             onClick={resetWidth}
           />
+        </div>
+        <div className="absolute bottom-0 w-full text-center font-bold text-muted-foreground">
+          <p className="text-sm">NoteScape v2.3.0</p>
         </div>
       </aside>
       <div
