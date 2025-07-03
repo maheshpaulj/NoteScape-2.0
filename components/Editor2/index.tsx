@@ -14,6 +14,7 @@ import { doc, serverTimestamp, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import TranslateNote from "../Editor/TranslateNote";
 import ChatToNote from "../Editor/ChatToNote";
+import { useUser } from "@clerk/clerk-react";
 
 type SaveStatus = "saved" | "saving" | "idle";
 
@@ -23,6 +24,7 @@ export default function Editor({ noteId }: { noteId: string }) {
   const [blocks, setBlocks] = useState<Block[]>([]); //eslint-disable-line @typescript-eslint/no-unused-vars
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const { user } = useUser();
 
   const editor = useCreateBlockNote({
     uploadFile: async (file: File) => {
@@ -70,6 +72,7 @@ export default function Editor({ noteId }: { noteId: string }) {
   // Debounced save function for blocks
   const saveToFirebase = useCallback( //eslint-disable-line react-hooks/exhaustive-deps
     debounce(async (blocks: Block[]) => {
+      if(!user) return;
       try {
         setSaveStatus("saving");
         const content = await editor.blocksToHTMLLossy(blocks);
@@ -78,9 +81,18 @@ export default function Editor({ noteId }: { noteId: string }) {
           content,
           updatedAt: serverTimestamp(),
         });
+
+        const docRef2 = doc(db, "users", user.emailAddresses[0].toString(), "rooms", noteId);
+        
+        await updateDoc(docRef2, {
+          updatedAt: serverTimestamp(),
+        });
+        
         setSaveStatus("saved");
         // Reset to idle after 2 seconds
         setTimeout(() => setSaveStatus("idle"), 2000);
+        console.log("Saving to user rooms:", docRef2, user?.emailAddresses[0].toString(), noteId);
+        console.log("test test");
       } catch (error) {
         console.error("Error saving document:", error);
         setSaveStatus("idle");

@@ -2,6 +2,7 @@
 
 import { adminDb } from "@/firebase-admin";
 import { auth } from "@clerk/nextjs/server"
+import { serverTimestamp } from "firebase/firestore";
 
 export async function createNewNote(parentNoteId: string | null = null) {
     auth.protect();
@@ -22,8 +23,8 @@ export async function createNewNote(parentNoteId: string | null = null) {
         .set({
             userId: sessionClaims?.email!,
             role: "owner",
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
             roomId: docRef.id,
             icon: "",
             coverImage: "",
@@ -60,7 +61,7 @@ export async function inviteUserToNote(roomId: string, email: string, ownerEmail
             ...ownerRoomData,      // Copy all existing room data from owner
             userId: email,         // Override with new user's email
             role: "editor",        // Set role to editor
-            createdAt: new Date(), // Set new timestamp
+            createdAt: serverTimestamp(), // Set new timestamp
             roomId,               // Ensure roomId is included
         };
 

@@ -1,22 +1,23 @@
 "use client";
 
-import { useRoom, useSelf } from "@liveblocks/react/suspense";
-import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 import { useEffect, useState, useCallback } from "react";
 import * as Y from "yjs";
+import { useTheme } from "next-themes";
+import debounce from "lodash/debounce";
+import { doc as DocFB, serverTimestamp, getDoc, setDoc } from "firebase/firestore";
+
+import { db } from "@/firebase";
+import { useEdgeStore } from "@/lib/edgestore";
+import { useRoom, useSelf } from "@liveblocks/react/suspense";
+import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 import { BlockNoteView } from "@blocknote/shadcn";
 import { BlockNoteEditor } from "@blocknote/core";
 import { useCreateBlockNote } from "@blocknote/react";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/shadcn/style.css";
 import stringToColor from "@/lib/stringToColor";
-import { useTheme } from "next-themes";
 import TranslateNote from "./TranslateNote";
 import ChatToNote from "./ChatToNote";
-import { useEdgeStore } from "@/lib/edgestore";
-import debounce from "lodash/debounce";
-import { doc as DocFB, serverTimestamp, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/firebase";
 
 type BlockNoteProps = {
   doc: Y.Doc;
@@ -71,8 +72,16 @@ function BlockNote({ doc, provider, roomId, initialContent }: BlockNoteProps) {
           updatedAt: serverTimestamp(),
         }, { merge: true });
         
+        const docRef2 = DocFB(db, "users", userInfo.email, "rooms", roomId);
+
+        await setDoc(docRef2, {
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+
+        
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
+        console.log("Saving to user rooms:", docRef2, userInfo.email, roomId);
       } catch (error) {
         console.error("Error updating Yjs data:", error);
         setSaveStatus("idle");
