@@ -196,7 +196,7 @@ export function Sidebar() {
           />
         </div>
         <div className="absolute bottom-0 w-full text-center font-bold text-muted-foreground">
-          <p className="text-sm">NoteScape v2.3.2</p>
+          <p className="text-sm">NoteScape v2.3.3</p>
         </div>
       </aside>
       <div

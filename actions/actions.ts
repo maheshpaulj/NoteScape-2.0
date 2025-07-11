@@ -2,12 +2,16 @@
 
 import { adminDb } from "@/firebase-admin";
 import { auth } from "@clerk/nextjs/server"
-import { serverTimestamp } from "firebase/firestore";
+import { FieldValue } from "firebase-admin/firestore";
+
 
 export async function createNewNote(parentNoteId: string | null = null) {
     auth.protect();
 
     const { sessionClaims } = await auth();
+    if (!sessionClaims?.email) {
+        throw new Error("User not authenticated or email is missing.");
+    }
 
     const docCollectionRef = adminDb.collection('notes');
     const docRef = await docCollectionRef.add({
@@ -17,14 +21,14 @@ export async function createNewNote(parentNoteId: string | null = null) {
 
     await adminDb
         .collection("users")
-        .doc(sessionClaims?.email!)
+        .doc(sessionClaims.email!)
         .collection("rooms")
         .doc(docRef.id)
         .set({
-            userId: sessionClaims?.email!,
+            userId: sessionClaims.email!,
             role: "owner",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
             roomId: docRef.id,
             icon: "",
             coverImage: "",
@@ -61,7 +65,7 @@ export async function inviteUserToNote(roomId: string, email: string, ownerEmail
             ...ownerRoomData,      // Copy all existing room data from owner
             userId: email,         // Override with new user's email
             role: "editor",        // Set role to editor
-            createdAt: serverTimestamp(), // Set new timestamp
+            createdAt: FieldValue.serverTimestamp(), // Set new timestamp
             roomId,               // Ensure roomId is included
         };
 
