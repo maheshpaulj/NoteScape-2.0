@@ -70,53 +70,11 @@ This feature adds an AI-powered "Enhance Text" button to the BlockNote editor's 
 
 ## API Usage
 
-The feature uses the Gemini 2.5 Flash model with an advanced, multi-layered prompt that:
-
-### Content Enhancement:
-- **Grammar & Spelling**: Fixes errors while preserving original meaning
-- **Clarity & Flow**: Improves sentence structure and word choice
-- **Tone Preservation**: Maintains the author's voice and style
-
-### Intelligent Formatting:
-- **Heading Recognition**: Converts titles and topics into proper markdown headings (# ## ###)
-- **List Detection**: Converts content with multiple items into bullet points or numbered lists
-- **Paragraph Structure**: Breaks long blocks into separate paragraphs with proper line breaks
-- **Smart Spacing**: Adds proper line breaks between different ideas and sections
-- **Visual Enhancement**: Uses **bold** and *italic* markdown formatting for emphasis
-
-### Structural Intelligence:
-- **Heading Detection**: Converts titles into proper markdown heading blocks (# ## ###)
-- **Process Recognition**: Formats step-by-step content as numbered lists (1. 2. 3.)
-- **Example Grouping**: Organizes multiple examples as bullet points (-)
-- **Paragraph Separation**: Creates distinct paragraphs with proper line breaks
-- **Quote Formatting**: Uses markdown blockquotes (>) for important callouts
-- **Markdown Optimization**: Clean markdown output that renders perfectly in BlockNote
-
-The AI is trained to understand context and apply the most appropriate formatting based on the content type and structure.
-
-### Example Transformation:
-
-**Input:**
-```
-human heart
-
-heart is a organ which helps in the blood flow. its a very important part of the body.
-```
-
-**Output:**
-```markdown
-## Human Heart
-
-The heart is an organ that helps facilitate blood flow throughout the body.
-
-It is a vital and essential part of the human body.
-```
-
-**Result in BlockNote:**
-- "Human Heart" becomes a proper heading block using ##
-- Content is split into separate, well-structured paragraphs
-- Grammar and clarity are improved
-- Each idea gets its own paragraph with proper line breaks
+The feature uses the Gemini 1.5 Flash model with a carefully crafted prompt that:
+- Preserves the original tone and voice
+- Focuses on grammar and clarity improvements
+- Returns only the enhanced text without explanations
+- Maintains the same style while making it more polished
 
 ## Error Handling
 
