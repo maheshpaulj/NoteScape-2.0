@@ -2,9 +2,144 @@
 
 import { useState } from "react";
 import { useComponentsContext } from "@blocknote/react";
-import { BlockNoteEditor } from "@blocknote/core";
+import { BlockNoteEditor, Block } from "@blocknote/core";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+interface EnhanceTextButtonProps {
+  editor: BlockNoteEditor;
+}
+
+// Helper function to parse markdown text into BlockNote blocks
+function parseMarkdownToBlocks(markdownText: string): any[] {
+  const lines = markdownText.split('\n');
+  const blocks: any[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+    
+    if (trimmedLine === '') {
+      // Skip empty lines
+      continue;
+    }
+    
+    // Parse headings
+    if (trimmedLine.startsWith('### ')) {
+      blocks.push({
+        type: "heading",
+        props: { level: 3 },
+        content: parseInlineContent(trimmedLine.replace('### ', ''))
+      });
+    } else if (trimmedLine.startsWith('## ')) {
+      blocks.push({
+        type: "heading",
+        props: { level: 2 },
+        content: parseInlineContent(trimmedLine.replace('## ', ''))
+      });
+    } else if (trimmedLine.startsWith('# ')) {
+      blocks.push({
+        type: "heading",
+        props: { level: 1 },
+        content: parseInlineContent(trimmedLine.replace('# ', ''))
+      });
+    }
+    // Parse bullet points
+    else if (trimmedLine.startsWith('- ')) {
+      blocks.push({
+        type: "bulletListItem",
+        content: parseInlineContent(trimmedLine.replace('- ', ''))
+      });
+    }
+    // Parse numbered lists
+    else if (/^\d+\.\s/.test(trimmedLine)) {
+      blocks.push({
+        type: "numberedListItem",
+        content: parseInlineContent(trimmedLine.replace(/^\d+\.\s/, ''))
+      });
+    }
+    // Parse blockquotes
+    else if (trimmedLine.startsWith('> ')) {
+      blocks.push({
+        type: "paragraph", // BlockNote might not have blockquote, use paragraph
+        content: parseInlineContent(trimmedLine.replace('> ', ''))
+      });
+    }
+    // Parse regular paragraphs
+    else {
+      blocks.push({
+        type: "paragraph",
+        content: parseInlineContent(trimmedLine)
+      });
+    }
+  }
+  
+  return blocks;
+}
+
+// Helper function to parse inline content (bold, italic, etc.)
+function parseInlineContent(text: string): any[] {
+  if (!text.trim()) {
+    return [{ type: "text", text: "", styles: {} }];
+  }
+
+  const elements: any[] = [];
+  let remaining = text;
+  
+  while (remaining.length > 0) {
+    // Look for **bold** text
+    const boldMatch = remaining.match(/\*\*(.*?)\*\*/);
+    if (boldMatch && boldMatch.index !== undefined) {
+      // Add text before bold
+      if (boldMatch.index > 0) {
+        elements.push({
+          type: "text",
+          text: remaining.substring(0, boldMatch.index),
+          styles: {}
+        });
+      }
+      // Add bold text
+      elements.push({
+        type: "text",
+        text: boldMatch[1],
+        styles: { bold: true }
+      });
+      remaining = remaining.substring(boldMatch.index + boldMatch[0].length);
+      continue;
+    }
+    
+    // Look for *italic* text
+    const italicMatch = remaining.match(/\*([^*]+?)\*/);
+    if (italicMatch && italicMatch.index !== undefined) {
+      // Add text before italic
+      if (italicMatch.index > 0) {
+        elements.push({
+          type: "text",
+          text: remaining.substring(0, italicMatch.index),
+          styles: {}
+        });
+      }
+      // Add italic text
+      elements.push({
+        type: "text",
+        text: italicMatch[1],
+        styles: { italic: true }
+      });
+      remaining = remaining.substring(italicMatch.index + italicMatch[0].length);
+      continue;
+    }
+    
+    // No more formatting found, add remaining text
+    elements.push({
+      type: "text",
+      text: remaining,
+      styles: {}
+    });
+    break;
+  }
+  
+  return elements.length > 0 ? elements : [{ type: "text", text: text, styles: {} }];
+}
 
 interface EnhanceTextButtonProps {
   editor: BlockNoteEditor;
@@ -53,11 +188,18 @@ export function EnhanceTextButton({ editor }: EnhanceTextButtonProps) {
 
       const { enhancedText } = await response.json();
       
-      // Create new blocks with enhanced text
-      const enhancedBlocks = await editor.tryParseHTMLToBlocks(`<p>${enhancedText}</p>`);
+      // Parse the enhanced markdown text into BlockNote blocks
+      const enhancedBlocks = parseMarkdownToBlocks(enhancedText);
       
       if (enhancedBlocks && enhancedBlocks.length > 0) {
         editor.replaceBlocks(selection.blocks, enhancedBlocks);
+      } else {
+        // Fallback: create a simple paragraph block
+        const fallbackBlock = {
+          type: "paragraph",
+          content: [{ type: "text", text: enhancedText, styles: {} }]
+        };
+        editor.replaceBlocks(selection.blocks, [fallbackBlock]);
       }
       
       toast.success("Text enhanced successfully!");
