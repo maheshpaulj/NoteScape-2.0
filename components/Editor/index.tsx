@@ -15,9 +15,23 @@ import { BlockNoteEditor } from "@blocknote/core";
 import { useCreateBlockNote } from "@blocknote/react";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/shadcn/style.css";
+import {
+  BasicTextStyleButton,
+  BlockTypeSelect,
+  ColorStyleButton,
+  CreateLinkButton,
+  FileCaptionButton,
+  FileReplaceButton,
+  FormattingToolbar,
+  FormattingToolbarController,
+  NestBlockButton,
+  TextAlignButton,
+  UnnestBlockButton,
+} from "@blocknote/react";
 import stringToColor from "@/lib/stringToColor";
 import TranslateNote from "./TranslateNote";
 import ChatToNote from "./ChatToNote";
+import { EnhanceTextButton } from "./EnhanceTextButton";
 
 type BlockNoteProps = {
   doc: Y.Doc;
@@ -108,11 +122,59 @@ function BlockNote({ doc, provider, roomId, initialContent }: BlockNoteProps) {
         editor={editor}
         className="min-h-screen"
         theme={resolvedTheme === "dark" ? "dark" : "light"}
+        formattingToolbar={false}
         onChange={() => {
           setSaveStatus("saving");
           updateFirebase(doc);
         }}
-      />
+      >
+        <FormattingToolbarController
+          formattingToolbar={() => (
+            <FormattingToolbar>
+              <BlockTypeSelect key={"blockTypeSelect"} />
+              <FileCaptionButton key={"fileCaptionButton"} />
+              <FileReplaceButton key={"replaceFileButton"} />
+              <BasicTextStyleButton
+                basicTextStyle={"bold"}
+                key={"boldStyleButton"}
+              />
+              <BasicTextStyleButton
+                basicTextStyle={"italic"}
+                key={"italicStyleButton"}
+              />
+              <BasicTextStyleButton
+                basicTextStyle={"underline"}
+                key={"underlineStyleButton"}
+              />
+              <BasicTextStyleButton
+                basicTextStyle={"strike"}
+                key={"strikeStyleButton"}
+              />
+              <BasicTextStyleButton
+                key={"codeStyleButton"}
+                basicTextStyle={"code"}
+              />
+              <TextAlignButton
+                textAlignment={"left"}
+                key={"textAlignLeftButton"}
+              />
+              <TextAlignButton
+                textAlignment={"center"}
+                key={"textAlignCenterButton"}
+              />
+              <TextAlignButton
+                textAlignment={"right"}
+                key={"textAlignRightButton"}
+              />
+              <ColorStyleButton key={"colorStyleButton"} />
+              <NestBlockButton key={"nestBlockButton"} />
+              <UnnestBlockButton key={"unnestBlockButton"} />
+              <CreateLinkButton key={"createLinkButton"} />
+              <EnhanceTextButton key={"enhanceTextButton"} editor={editor} />
+            </FormattingToolbar>
+          )}
+        />
+      </BlockNoteView>
     </div>
   );
 }
