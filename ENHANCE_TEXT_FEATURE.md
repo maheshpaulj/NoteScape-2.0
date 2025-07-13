@@ -63,7 +63,7 @@ This feature adds an AI-powered "Enhance Text" button to the BlockNote editor's 
 
 ## API Usage
 
-The feature uses the Gemini 1.5 Flash model with a carefully crafted prompt that:
+The feature uses the Gemini 2.5 flash model with a carefully crafted prompt that:
 - Preserves the original tone and voice
 - Focuses on grammar and clarity improvements
 - Returns only the enhanced text without explanations
