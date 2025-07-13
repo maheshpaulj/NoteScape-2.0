@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/" # package.json is in the root
+    schedule:
+      interval: "weekly" # or "daily" if you want more frequent updates
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+  - package-ecosystem: "github-actions"
+    directory: "/"
