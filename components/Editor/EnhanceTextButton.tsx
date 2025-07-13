@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useComponentsContext } from "@blocknote/react";
-import { BlockNoteEditor, Block } from "@blocknote/core";
+import { BlockNoteEditor } from "@blocknote/core";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,10 +10,23 @@ interface EnhanceTextButtonProps {
   editor: BlockNoteEditor;
 }
 
+// Define proper types for BlockNote blocks
+interface BlockContent {
+  type: "text";
+  text: string;
+  styles: Record<string, boolean>;
+}
+
+interface BlockStructure {
+  type: string;
+  props?: Record<string, unknown>;
+  content: BlockContent[];
+}
+
 // Helper function to parse markdown text into BlockNote blocks
-function parseMarkdownToBlocks(markdownText: string): any[] {
+function parseMarkdownToBlocks(markdownText: string): BlockStructure[] {
   const lines = markdownText.split('\n');
-  const blocks: any[] = [];
+  const blocks: BlockStructure[] = [];
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -78,12 +91,12 @@ function parseMarkdownToBlocks(markdownText: string): any[] {
 }
 
 // Helper function to parse inline content (bold, italic, etc.)
-function parseInlineContent(text: string): any[] {
+function parseInlineContent(text: string): BlockContent[] {
   if (!text.trim()) {
     return [{ type: "text" as const, text: "", styles: {} }];
   }
 
-  const elements: any[] = [];
+  const elements: BlockContent[] = [];
   let remaining = text;
   
   while (remaining.length > 0) {
@@ -192,14 +205,14 @@ export function EnhanceTextButton({ editor }: EnhanceTextButtonProps) {
       const enhancedBlocks = parseMarkdownToBlocks(enhancedText);
       
       if (enhancedBlocks && enhancedBlocks.length > 0) {
-        editor.replaceBlocks(selection.blocks, enhancedBlocks);
+        editor.replaceBlocks(selection.blocks, enhancedBlocks as never[]);
       } else {
         // Fallback: create a simple paragraph block
         const fallbackBlock = {
           type: "paragraph" as const,
           content: [{ type: "text" as const, text: enhancedText, styles: {} }]
         };
-        editor.replaceBlocks(selection.blocks, [fallbackBlock]);
+        editor.replaceBlocks(selection.blocks, [fallbackBlock as never]);
       }
       
       toast.success("Text enhanced successfully!");
