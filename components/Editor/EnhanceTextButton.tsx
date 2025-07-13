@@ -27,19 +27,19 @@ function parseMarkdownToBlocks(markdownText: string): any[] {
     // Parse headings
     if (trimmedLine.startsWith('### ')) {
       blocks.push({
-        type: "heading",
+        type: "heading" as const,
         props: { level: 3 },
         content: parseInlineContent(trimmedLine.replace('### ', ''))
       });
     } else if (trimmedLine.startsWith('## ')) {
       blocks.push({
-        type: "heading",
+        type: "heading" as const,
         props: { level: 2 },
         content: parseInlineContent(trimmedLine.replace('## ', ''))
       });
     } else if (trimmedLine.startsWith('# ')) {
       blocks.push({
-        type: "heading",
+        type: "heading" as const,
         props: { level: 1 },
         content: parseInlineContent(trimmedLine.replace('# ', ''))
       });
@@ -47,28 +47,28 @@ function parseMarkdownToBlocks(markdownText: string): any[] {
     // Parse bullet points
     else if (trimmedLine.startsWith('- ')) {
       blocks.push({
-        type: "bulletListItem",
+        type: "bulletListItem" as const,
         content: parseInlineContent(trimmedLine.replace('- ', ''))
       });
     }
     // Parse numbered lists
     else if (/^\d+\.\s/.test(trimmedLine)) {
       blocks.push({
-        type: "numberedListItem",
+        type: "numberedListItem" as const,
         content: parseInlineContent(trimmedLine.replace(/^\d+\.\s/, ''))
       });
     }
     // Parse blockquotes
     else if (trimmedLine.startsWith('> ')) {
       blocks.push({
-        type: "paragraph", // BlockNote might not have blockquote, use paragraph
+        type: "paragraph" as const, // BlockNote might not have blockquote, use paragraph
         content: parseInlineContent(trimmedLine.replace('> ', ''))
       });
     }
     // Parse regular paragraphs
     else {
       blocks.push({
-        type: "paragraph",
+        type: "paragraph" as const,
         content: parseInlineContent(trimmedLine)
       });
     }
@@ -80,7 +80,7 @@ function parseMarkdownToBlocks(markdownText: string): any[] {
 // Helper function to parse inline content (bold, italic, etc.)
 function parseInlineContent(text: string): any[] {
   if (!text.trim()) {
-    return [{ type: "text", text: "", styles: {} }];
+    return [{ type: "text" as const, text: "", styles: {} }];
   }
 
   const elements: any[] = [];
@@ -93,14 +93,14 @@ function parseInlineContent(text: string): any[] {
       // Add text before bold
       if (boldMatch.index > 0) {
         elements.push({
-          type: "text",
+          type: "text" as const,
           text: remaining.substring(0, boldMatch.index),
           styles: {}
         });
       }
       // Add bold text
       elements.push({
-        type: "text",
+        type: "text" as const,
         text: boldMatch[1],
         styles: { bold: true }
       });
@@ -114,14 +114,14 @@ function parseInlineContent(text: string): any[] {
       // Add text before italic
       if (italicMatch.index > 0) {
         elements.push({
-          type: "text",
+          type: "text" as const,
           text: remaining.substring(0, italicMatch.index),
           styles: {}
         });
       }
       // Add italic text
       elements.push({
-        type: "text",
+        type: "text" as const,
         text: italicMatch[1],
         styles: { italic: true }
       });
@@ -131,14 +131,14 @@ function parseInlineContent(text: string): any[] {
     
     // No more formatting found, add remaining text
     elements.push({
-      type: "text",
+      type: "text" as const,
       text: remaining,
       styles: {}
     });
     break;
   }
   
-  return elements.length > 0 ? elements : [{ type: "text", text: text, styles: {} }];
+  return elements.length > 0 ? elements : [{ type: "text" as const, text: text, styles: {} }];
 }
 
 interface EnhanceTextButtonProps {
@@ -196,8 +196,8 @@ export function EnhanceTextButton({ editor }: EnhanceTextButtonProps) {
       } else {
         // Fallback: create a simple paragraph block
         const fallbackBlock = {
-          type: "paragraph",
-          content: [{ type: "text", text: enhancedText, styles: {} }]
+          type: "paragraph" as const,
+          content: [{ type: "text" as const, text: enhancedText, styles: {} }]
         };
         editor.replaceBlocks(selection.blocks, [fallbackBlock]);
       }
