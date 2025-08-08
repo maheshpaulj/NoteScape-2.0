@@ -1,0 +1,22 @@
+# .github/workflows/cron.yml
+
+name: Reminder Check Cron Job
+
+on:
+  schedule:
+    # Runs every 2 minutes
+    - cron: '*/1 * * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - beta--Notification-test-branch
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the check reminders API endpoint
+        run: >
+          curl --request GET 
+          --url 'https://notescape.vercel.app/api/reminders/check' 
+          --header 'Authorization: Bearer ${{ secrets.CRON_SECRET }}'
