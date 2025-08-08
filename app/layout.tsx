@@ -8,6 +8,7 @@ import { Analytics } from "@vercel/analytics/react"
 import { Toaster } from "sonner";
 import { ModalProvider } from "@/components/Providers/ModalProvider";
 import { EdgeStoreProvider } from "@/lib/edgestore";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -97,6 +98,7 @@ export default function RootLayout({
             <EdgeStoreProvider>
               <Toaster position="bottom-right" />
               <ModalProvider />
+              <ServiceWorkerRegistrar />
               {children}
             </EdgeStoreProvider>
           </ClerkProviderWrapper>

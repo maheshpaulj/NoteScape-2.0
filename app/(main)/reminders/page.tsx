@@ -1,3 +1,4 @@
+// src/app/reminders/page.tsx
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -17,78 +18,50 @@ import {
   Plus,
   Pencil,
 } from 'lucide-react';
-
-// UI Components
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-
-// Custom Components
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ReminderForm } from '@/components/ReminderForm';
 import { NotificationPermissionBanner } from '@/components/NotificationPermissionBanner';
 
 export default function RemindersPage() {
-  // --- All state declarations remain the same ---
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  const [isCurrentDeviceSubscribed, setIsCurrentDeviceSubscribed] = useState<boolean | null>(null);
   const [notificationPermission, setNotificationPermission] = useState<PermissionState | null>(null);
   const [isPending, startTransition] = useTransition();
 
-
-  // --- THIS IS THE CORRECT, NATIVE BROWSER API REPLACEMENT ---
   useEffect(() => {
-    // Check if the necessary APIs are available in the browser
-    if (typeof window !== 'undefined' && 'Notification' in window && 'permissions' in navigator) {
+    // This function performs ALL client-side checks for notifications.
+    const checkNotificationState = async () => {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('permissions' in navigator)) return;
       
-      // Use the modern Permissions API to query the state
-      navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
-        // Set the initial permission state from the query result
-        setNotificationPermission(permissionStatus.state);
+      // 1. Check the browser's overall permission status
+      const permissionStatus = await navigator.permissions.query({ name: 'notifications' });
+      setNotificationPermission(permissionStatus.state);
+      permissionStatus.onchange = () => setNotificationPermission(permissionStatus.state);
 
-        // This is the native event listener for permission changes.
-        // It replaces `OneSignal.on('notificationPermissionChange', ...)`
-        permissionStatus.onchange = () => {
-          setNotificationPermission(permissionStatus.state);
-        };
-      });
-    }
-  }, []); // Empty dependency array ensures this runs only once on mount.
+      // 2. Check if THIS SPECIFIC DEVICE is already subscribed
+      const swRegistration = await navigator.serviceWorker.ready;
+      const subscription = await swRegistration.pushManager.getSubscription();
+      setIsCurrentDeviceSubscribed(!!subscription);
+    };
+    checkNotificationState();
 
-
-  // --- The rest of the component logic is IDENTICAL and correct ---
-
-  // Effect for fetching the initial list of reminders
-  useEffect(() => {
-    const fetchReminders = async () => {
+    const fetchRemindersData = async () => {
       setIsLoading(true);
       try {
         const userReminders = await getAllUserReminders();
         setReminders(userReminders);
       } catch (error) {
         toast.error('Failed to load your reminders.');
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchReminders();
+    fetchRemindersData();
   }, []);
 
   const handleOpenAddDialog = () => {
@@ -102,9 +75,8 @@ export default function RemindersPage() {
   };
 
   const handleDelete = (reminderId: string) => {
-    const originalReminders = [...reminders];
+    let originalReminders = [...reminders];
     setReminders((prev) => prev.filter((r) => r.id !== reminderId));
-
     startTransition(async () => {
       const result = await deleteReminder(reminderId);
       if (result.success) {
@@ -129,9 +101,11 @@ export default function RemindersPage() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <div className="container mx-auto p-4 md:p-8">
-        <NotificationPermissionBanner permission={notificationPermission} />
+        <NotificationPermissionBanner
+          permission={notificationPermission}
+          isSubscribed={isCurrentDeviceSubscribed}
+        />
 
-        {/* ... The rest of the JSX is exactly the same and correct ... */}
         <div className="flex items-center justify-between gap-2 mb-6">
           <div className="flex items-center gap-3">
             <AlarmClock className="h-8 w-8" />
@@ -162,7 +136,7 @@ export default function RemindersPage() {
           ) : reminders.length === 0 ? (
             <div className="text-center text-muted-foreground mt-16 p-8 border-2 border-dashed rounded-lg">
               <p className="text-lg font-medium">No Reminders Found</p>
-              <p className="text-sm">Click the &quot;Add Reminder&quot; button to get started.</p>
+              <p className="text-sm">Click the "Add Reminder" button to get started.</p>
             </div>
           ) : (
             <div className="space-y-4">

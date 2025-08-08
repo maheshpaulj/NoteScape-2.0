@@ -45,7 +45,6 @@ export async function GET(req: NextRequest) {
     
     const notificationsToSend: Promise<any>[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
     const remindersToUpdate: FirebaseFirestore.DocumentReference[] = [];
-
     for (const reminderDoc of dueRemindersSnapshot.docs) {
       const reminder = reminderDoc.data();
       const userId = reminder.userId;
@@ -69,7 +68,7 @@ export async function GET(req: NextRequest) {
       subscriptions.forEach(sub => {
         notificationsToSend.push(webpush.sendNotification(sub, notificationPayload));
       });
-      
+
       remindersToUpdate.push(reminderDoc.ref);
     }
     

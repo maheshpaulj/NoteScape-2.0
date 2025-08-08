@@ -406,18 +406,16 @@ export async function savePushSubscription(subscription: object) {
   auth.protect();
   const { sessionClaims } = await auth();
   const userId = sessionClaims?.email;
-  if (!userId) {
-    throw new Error("User not authenticated.");}
+  if (!userId) throw new Error("User not authenticated.");
 
   const userRef = adminDb.collection("users").doc(userId);
-
-  // Use arrayUnion to add the new subscription without creating duplicates.
-  await userRef.update({
+  // arrayUnion adds the new device subscription without creating duplicates of the same object.
+  await userRef.set({
     pushSubscriptions: FieldValue.arrayUnion(subscription),
-  });
-
+  }, { merge: true }); 
   return { success: true };
 }
+
 
 export async function scheduleReminder(
   reminderTime: Date,

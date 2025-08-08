@@ -12,8 +12,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'New Notification';
   const options = {
     body: data.body,
-    icon: '/icon-192x192.png',
-    badge: '/badge-72x72.png',
+    icon: '/logo.png',
+    badge: '/logo.png',
     data: {
       url: data.url || '/',
     },
