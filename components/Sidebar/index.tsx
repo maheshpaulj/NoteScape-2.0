@@ -1,6 +1,6 @@
 'use client'
 import { cn } from "@/lib/utils"
-import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook } from "lucide-react"
+import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook, AlarmClock } from "lucide-react"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import React, { ElementRef, useEffect, useRef, useState, useTransition, TouchEvent } from "react"
 import { useMediaQuery } from 'usehooks-ts'
@@ -168,6 +168,11 @@ export function Sidebar() {
               onClick={() => router.push('/home')} 
               label='Home' 
               icon={HomeIcon}
+            />
+            <Item 
+              onClick={() => router.push('/reminders')} 
+              label='Reminders' 
+              icon={AlarmClock}
             />
             <Item 
               onClick={() => router.push('/allNotes')} 

@@ -2,8 +2,17 @@
 
 import { adminDb } from "@/firebase-admin";
 import { auth } from "@clerk/nextjs/server"
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
+export type Reminder = {
+  id: string;
+  userId: string;
+  message: string;
+  reminderTime: Date;
+  oneSignalNotificationId?: string;
+  noteId?: string;
+  noteTitle?: string;
+};
 
 export async function createNewNote(parentNoteId: string | null = null) {
     auth.protect();
@@ -391,4 +400,165 @@ export async function removeNoteFromQuickAccess(noteId: string, email: string) {
         console.log(error);
         return { success: false };
     }
+}
+
+export async function savePushSubscription(subscription: object) {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) {
+    throw new Error("User not authenticated.");}
+
+  const userRef = adminDb.collection("users").doc(userId);
+
+  // Use arrayUnion to add the new subscription without creating duplicates.
+  await userRef.update({
+    pushSubscriptions: FieldValue.arrayUnion(subscription),
+  });
+
+  return { success: true };
+}
+
+export async function scheduleReminder(
+  reminderTime: Date,
+  message: string,
+  noteDetails?: { id: string; title: string }
+) {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) throw new Error("User not authenticated.");
+
+  // The path to save the reminder
+  const reminderRef = adminDb
+    .collection("reminders")
+    .doc(userId)
+    .collection("reminders")
+    .doc();
+
+  // The data to save
+  const reminderData = {
+    userId,
+    message,
+    reminderTime: Timestamp.fromDate(reminderTime),
+    isSent: false, // <-- IMPORTANT NEW FIELD
+    createdAt: FieldValue.serverTimestamp(),
+    ...(noteDetails && { noteId: noteDetails.id, noteTitle: noteDetails.title }),
+  };
+
+  await reminderRef.set(reminderData);
+
+  // Return a partial reminder object for optimistic UI updates
+  const newReminder: Reminder = {
+    id: reminderRef.id,
+    userId,
+    message,
+    reminderTime,
+    noteId: noteDetails?.id,
+    noteTitle: noteDetails?.title,
+  };
+  return { success: true, reminder: newReminder };
+}
+
+export async function updateReminder(
+  reminderId: string,
+  newReminderTime: Date,
+  newMessage: string
+) {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) throw new Error("User not authenticated.");
+
+  const reminderRef = adminDb
+    .collection("reminders")
+    .doc(userId)
+    .collection("reminders")
+    .doc(reminderId);
+
+  // Get the original note details if they exist, so we don't lose them
+  const originalDoc = await reminderRef.get();
+  const originalData = originalDoc.data();
+
+  const updatedData = {
+    message: newMessage,
+    reminderTime: Timestamp.fromDate(newReminderTime),
+    isSent: false, // Reset the 'isSent' flag so it can be picked up by the cron job again
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  await reminderRef.update(updatedData);
+
+  // Construct the full reminder object to send back to the client
+  const updatedReminder: Reminder = {
+    id: reminderId,
+    userId,
+    message: newMessage,
+    reminderTime: newReminderTime,
+    noteId: originalData?.noteId,
+    noteTitle: originalData?.noteTitle,
+  };
+
+  return { success: true, reminder: updatedReminder };
+}
+
+type DeleteReminderSuccess = {
+  success: true;
+};
+
+type DeleteReminderFailure = {
+  success: false;
+  error: string;
+};
+
+export async function deleteReminder(reminderId: string): Promise<DeleteReminderSuccess | DeleteReminderFailure> {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+
+  if (!userId) {
+    return { success: false, error: "User not authenticated." };
+  }
+
+  const reminderRef = adminDb.collection("reminders").doc(userId).collection("reminders").doc(reminderId);
+
+  try {
+    await reminderRef.delete();
+    return { success: true };
+  } catch (e) {
+    console.error("Error deleting reminder:", e);
+    // Return a specific error message on failure
+    return { success: false, error: "Failed to delete reminder from database." };
+  }
+}
+
+
+/**
+ * Fetches all reminders for the currently logged-in user.
+ * THIS IS USED BY: The main RemindersPage to populate the initial list.
+ */
+export async function getAllUserReminders(): Promise<Reminder[]> {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) return [];
+
+  const remindersQuery = await adminDb
+    .collection("reminders")
+    .doc(userId)
+    .collection("reminders")
+    .orderBy("reminderTime", "asc")
+    .get();
+
+  return remindersQuery.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      userId: data.userId,
+      message: data.message,
+      reminderTime: (data.reminderTime as Timestamp).toDate(),
+      noteId: data.noteId,
+      noteTitle: data.noteTitle,
+    } as Reminder;
+  });
 }

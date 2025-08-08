@@ -49,7 +49,7 @@ AI-powered note-taking application with real-time collaboration capabilities.
 1. Clone the repository:
 ```bash
 git clone https://github.com/maheshpaulj/NoteScape-2.0.git
-cd notescape
+cd NoteScape-2.0
 ```
 
 2. Install dependencies:
