@@ -4,7 +4,7 @@ import withPWA from 'next-pwa';
 const nextConfig = {
     images:{
         domains:["files.edgestore.dev"]
-      }
+    },
 };
 
 export default withPWA({
