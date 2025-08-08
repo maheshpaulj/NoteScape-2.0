@@ -4,12 +4,20 @@ import { adminDb } from '@/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import webpush from 'web-push';
 
-// Configure web-push with your VAPID keys
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// Helper to ensure VAPID is configured only once per serverless function invocation.
+let isVapidConfigured = false;
+function configureVapid() {
+  if (isVapidConfigured) {
+    return;
+  }
+  // This configuration now happens safely at runtime.
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+  isVapidConfigured = true;
+}
 
 export async function GET(req: NextRequest) {
   // 1. Secure the endpoint
@@ -19,10 +27,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // 2. Find due reminders
+    // 2. Configure VAPID at the start of the execution
+    configureVapid();
+
+    // 3. Find due reminders
     const now = Timestamp.now();
     const remindersQuery = adminDb
-      .collectionGroup('reminders') // Assumes reminders/{user}/reminders structure
+      .collectionGroup('reminders')
       .where('reminderTime', '<=', now)
       .where('isSent', '==', false);
 
@@ -39,13 +50,12 @@ export async function GET(req: NextRequest) {
       const reminder = reminderDoc.data();
       const userId = reminder.userId;
 
-      // 3. Get the user's push subscriptions
       const userDoc = await adminDb.collection('users').doc(userId).get();
       const userData = userDoc.data();
       const subscriptions = userData?.pushSubscriptions;
       
       if (!subscriptions || !Array.isArray(subscriptions)) {
-        continue; // Skip if user has no subscriptions
+        continue;
       }
 
       const notificationPayload = JSON.stringify({
@@ -56,7 +66,6 @@ export async function GET(req: NextRequest) {
           : `${process.env.NEXT_PUBLIC_APP_URL}/reminders`,
       });
 
-      // 4. Send a notification to each of the user's devices
       subscriptions.forEach(sub => {
         notificationsToSend.push(webpush.sendNotification(sub, notificationPayload));
       });
@@ -64,19 +73,21 @@ export async function GET(req: NextRequest) {
       remindersToUpdate.push(reminderDoc.ref);
     }
     
-    // 5. Execute all sends and DB updates
-    await Promise.allSettled(notificationsToSend); // Send all notifications
+    await Promise.allSettled(notificationsToSend);
     
     const batch = adminDb.batch();
     remindersToUpdate.forEach(ref => {
-      batch.update(ref, { isSent: true }); // Mark as sent
+      batch.update(ref, { isSent: true });
     });
     await batch.commit();
 
     return NextResponse.json({ success: true, message: `Sent ${remindersToUpdate.length} reminders.` });
 
   } catch (error) {
-    console.error("Error checking reminders:", error);
+    // Log the actual error on the server for your own debugging
+    console.error("CRON JOB FAILED:", error);
+    
+    // Return a generic error to the client
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
