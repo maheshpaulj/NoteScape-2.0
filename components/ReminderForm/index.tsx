@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { scheduleReminder, updateReminder, Reminder } from '@/actions/actions';
+import { scheduleReminder, updateReminder } from '@/actions/actions';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Reminder } from '@/types/types';
 
 interface ReminderFormProps {
   initialData?: Reminder | null; // Pass a reminder here to enter "edit" mode

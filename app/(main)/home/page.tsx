@@ -234,7 +234,7 @@ export default function Page() {
   if (!user) return null;
   
   return (
-    <div className="h-screen overflow-hidden flex flex-col p-6 max-w-6xl mx-auto mt-12">
+    <div className="h-screen overflow-hidden flex flex-col p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-12 pb-12 max-lg:mb-4 max-lg:pb-4 border-b-2 border-accent ">
         <h1 className="text-4xl lg:text-6xl font-bold underline">

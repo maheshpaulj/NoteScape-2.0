@@ -3,16 +3,7 @@
 import { adminDb } from "@/firebase-admin";
 import { auth } from "@clerk/nextjs/server"
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-
-export type Reminder = {
-  id: string;
-  userId: string;
-  message: string;
-  reminderTime: Date;
-  oneSignalNotificationId?: string;
-  noteId?: string;
-  noteTitle?: string;
-};
+import { Flag, Reminder } from "@/types/types";
 
 export async function createNewNote(parentNoteId: string | null = null) {
     auth.protect();
@@ -417,46 +408,35 @@ export async function savePushSubscription(subscription: object) {
 }
 
 
-export async function scheduleReminder(
-  reminderTime: Date,
-  message: string,
-  noteDetails?: { id: string; title: string }
-) {
+export async function scheduleReminder(reminderTime: Date, message: string) {
   auth.protect();
   const { sessionClaims } = await auth();
   const userId = sessionClaims?.email;
   if (!userId) throw new Error("User not authenticated.");
 
-  // The path to save the reminder
-  const reminderRef = adminDb
-    .collection("reminders")
-    .doc(userId)
-    .collection("reminders")
-    .doc();
-
-  // The data to save
+  const reminderRef = adminDb.collection("reminders").doc(userId).collection("reminders").doc();
   const reminderData = {
     userId,
     message,
     reminderTime: Timestamp.fromDate(reminderTime),
-    isSent: false, // <-- IMPORTANT NEW FIELD
+    isDone: false,
+    isSent: false,
+    flagIds: [], // Initialize with empty flags
     createdAt: FieldValue.serverTimestamp(),
-    ...(noteDetails && { noteId: noteDetails.id, noteTitle: noteDetails.title }),
   };
-
   await reminderRef.set(reminderData);
 
-  // Return a partial reminder object for optimistic UI updates
   const newReminder: Reminder = {
     id: reminderRef.id,
     userId,
     message,
     reminderTime,
-    noteId: noteDetails?.id,
-    noteTitle: noteDetails?.title,
+    isDone: false,
+    flagIds: [],
   };
   return { success: true, reminder: newReminder };
 }
+
 
 export async function updateReminder(
   reminderId: string,
@@ -468,31 +448,31 @@ export async function updateReminder(
   const userId = sessionClaims?.email;
   if (!userId) throw new Error("User not authenticated.");
 
-  const reminderRef = adminDb
-    .collection("reminders")
-    .doc(userId)
-    .collection("reminders")
-    .doc(reminderId);
+  const reminderRef = adminDb.collection("reminders").doc(userId).collection("reminders").doc(reminderId);
 
-  // Get the original note details if they exist, so we don't lose them
   const originalDoc = await reminderRef.get();
+  if (!originalDoc.exists) {
+    throw new Error("Reminder not found.");
+  }
   const originalData = originalDoc.data();
 
   const updatedData = {
     message: newMessage,
     reminderTime: Timestamp.fromDate(newReminderTime),
-    isSent: false, // Reset the 'isSent' flag so it can be picked up by the cron job again
+    isDone: false,
+    isSent: false,
     updatedAt: FieldValue.serverTimestamp(),
   };
 
   await reminderRef.update(updatedData);
 
-  // Construct the full reminder object to send back to the client
   const updatedReminder: Reminder = {
     id: reminderId,
     userId,
     message: newMessage,
     reminderTime: newReminderTime,
+    isDone: false,
+    flagIds: originalData?.flagIds || [],
     noteId: originalData?.noteId,
     noteTitle: originalData?.noteTitle,
   };
@@ -530,11 +510,6 @@ export async function deleteReminder(reminderId: string): Promise<DeleteReminder
   }
 }
 
-
-/**
- * Fetches all reminders for the currently logged-in user.
- * THIS IS USED BY: The main RemindersPage to populate the initial list.
- */
 export async function getAllUserReminders(): Promise<Reminder[]> {
   auth.protect();
   const { sessionClaims } = await auth();
@@ -557,6 +532,67 @@ export async function getAllUserReminders(): Promise<Reminder[]> {
       reminderTime: (data.reminderTime as Timestamp).toDate(),
       noteId: data.noteId,
       noteTitle: data.noteTitle,
+      flagIds: data.flagIds || [], 
+      isDone: data.isDone || false
     } as Reminder;
   });
+}
+
+export async function toggleReminderDone(reminderId: string, isDone: boolean) {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) throw new Error("User not authenticated.");
+
+  const reminderRef = adminDb.collection("reminders").doc(userId).collection("reminders").doc(reminderId);
+  await reminderRef.update({ isDone: isDone });
+
+  return { success: true };
+}
+
+export async function toggleReminderImportant(reminderId: string, isImportant: boolean) {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) throw new Error("User not authenticated.");
+
+  const reminderRef = adminDb.collection("reminders").doc(userId).collection("reminders").doc(reminderId);
+  await reminderRef.update({ isImportant: isImportant });
+
+  return { success: true };
+}
+
+export async function getAllUserFlags(): Promise<Flag[]> {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) return [];
+
+  const flagsSnapshot = await adminDb.collection("flags").doc(userId).collection("flags").get();
+  return flagsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Flag));
+}
+
+export async function createFlag(name: string, color: string): Promise<Flag> {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) throw new Error("User not authenticated.");
+
+  const flagRef = adminDb.collection("flags").doc(userId).collection("flags").doc();
+  const newFlag = { id: flagRef.id, name, color, userId };
+  await flagRef.set({ name, color, userId });
+
+  return newFlag;
+}
+
+export async function setReminderFlags(reminderId: string, flagIds: string[]) {
+  auth.protect();
+  const { sessionClaims } = await auth();
+  const userId = sessionClaims?.email;
+  if (!userId) throw new Error("User not authenticated.");
+
+  const reminderRef = adminDb.collection("reminders").doc(userId).collection("reminders").doc(reminderId);
+  await reminderRef.update({ flagIds });
+
+  return { success: true };
 }

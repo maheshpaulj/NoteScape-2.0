@@ -67,7 +67,7 @@ export function NotificationPermissionBanner({ permission, isSubscribed }: Notif
         <BellOff className="h-4 w-4" />
         <AlertTitle>Notifications Blocked</AlertTitle>
         <AlertDescription>
-          You have blocked notifications for this site. To receive reminders, please enable them in your browser's site settings.
+          You have blocked notifications for this site. To receive reminders, please enable them in your browser&apos;s site settings.
         </AlertDescription>
       </Alert>
     );
