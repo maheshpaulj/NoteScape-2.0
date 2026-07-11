@@ -13,23 +13,7 @@ import {
 } from '@/components/ui/command';
 import { useSearch } from "@/hooks/useSearch";
 import { useEffect, useState } from "react";
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collectionGroup, DocumentData, query, Timestamp, where } from 'firebase/firestore';
-import { db } from '@/firebase';
-
-interface RoomDocument extends DocumentData {
-  title: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  role: "owner" | "editor";
-  roomId: string;
-  userId: string;
-  parentNoteId: string | null;
-  archived: boolean;
-  icon: string;
-  coverImage: string;
-  quickAccess: boolean;
-}
+import { useRooms } from "@/hooks/useRooms";
 
 export function SearchCommand() {
   const { user } = useUser();
@@ -40,16 +24,7 @@ export function SearchCommand() {
   const isOpen = useSearch((store) => store.isOpen);
   const onClose = useSearch((store) => store.onClose);
 
-  const userId = user?.emailAddresses[0]?.toString(); // Adjust based on your Clerk user object
-
-  const roomsQuery = userId
-    ? query(
-        collectionGroup(db, 'rooms'),
-        where('userId', '==', userId)
-      )
-    : null;
-
-  const [snapshot] = useCollection(roomsQuery);
+  const { rooms } = useRooms();
 
   useEffect(() => {
     setIsMounted(true);
@@ -75,10 +50,7 @@ export function SearchCommand() {
     return null;
   }
 
-  const documents = snapshot?.docs.map((doc) => ({
-    ...(doc.data() as RoomDocument),
-    id: doc.id, // Attach the document ID
-  }));
+  const documents = rooms;
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onClose}>

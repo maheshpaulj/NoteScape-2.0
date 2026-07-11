@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/react"
 
 import { Toaster } from "sonner";
 import { ModalProvider } from "@/components/Providers/ModalProvider";
+import { FirebaseAuthProvider } from "@/components/Providers/FirebaseAuthProvider";
 import { EdgeStoreProvider } from "@/lib/edgestore";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
@@ -95,12 +96,14 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="notescape-theme">
           <ClerkProviderWrapper>
-            <EdgeStoreProvider>
-              <Toaster position="bottom-right" />
-              <ModalProvider />
-              <ServiceWorkerRegistrar />
-              {children}
-            </EdgeStoreProvider>
+            <FirebaseAuthProvider>
+              <EdgeStoreProvider>
+                <Toaster position="bottom-right" />
+                <ModalProvider />
+                <ServiceWorkerRegistrar />
+                {children}
+              </EdgeStoreProvider>
+            </FirebaseAuthProvider>
           </ClerkProviderWrapper>
         </ThemeProvider>
         <Analytics />

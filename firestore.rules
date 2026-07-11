@@ -1,0 +1,76 @@
+rules_version = '2';
+
+// NoteScape Firestore security rules.
+//
+// These rules rely on the Clerk → Firebase Auth bridge
+// (components/Providers/FirebaseAuthProvider.tsx + getFirebaseToken in
+// actions/actions.ts): the Firebase uid IS the user's email, matching how
+// user documents are keyed.
+//
+// DEPLOYMENT — do not deploy blindly:
+//   1. Enable Firebase Authentication in the Firebase console (no providers
+//      needed; custom tokens only).
+//   2. Verify sign-in works: the app should log no "Firebase sign-in skipped"
+//      warnings in the browser console.
+//   3. Test these rules in the Firebase console Rules Playground.
+//   4. Deploy: firebase deploy --only firestore:rules
+//
+// Server actions and API routes use the Admin SDK and bypass these rules.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Does the requester have a room doc for this note (i.e. access to it)?
+    function hasRoom(noteId) {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)/rooms/$(noteId));
+    }
+
+    // Shared note content: readable/writable by anyone who has the note in
+    // their rooms (Editor2 writes content snapshots client-side).
+    match /notes/{noteId} {
+      allow read, update: if signedIn() && hasRoom(noteId);
+      // Creation/deletion happens through server actions (Admin SDK) only.
+      allow create, delete: if false;
+    }
+
+    // Per-user room docs. The recursive wildcard is required so
+    // collectionGroup("rooms") queries (sidebar, home, RoomProviderWrapper,
+    // ManageUsers, Title, Toolbar) are covered.
+    match /{path=**}/rooms/{roomId} {
+      // Read your own room docs (userId == filter), or any user's room doc
+      // for a note you have access to (roomId == filter).
+      allow read: if signedIn()
+        && (resource.data.userId == request.auth.uid || hasRoom(resource.data.roomId));
+      // Update your own copy, or other users' copies of a note you have
+      // access to (Title/Toolbar fan out title/icon edits client-side).
+      allow update: if signedIn()
+        && (resource.data.userId == request.auth.uid || hasRoom(resource.data.roomId));
+      // Creation (invites) and deletion go through server actions.
+      allow create, delete: if false;
+    }
+
+    // The user doc itself holds pushSubscriptions; written via server
+    // actions, readable only by the owner.
+    match /users/{userEmail} {
+      allow read: if signedIn() && request.auth.uid == userEmail;
+      allow write: if false;
+    }
+
+    // Reminders and flags are strictly per-user and are accessed via server
+    // actions (Admin SDK), so no client access is required.
+    match /reminders/{userEmail}/reminders/{reminderId} {
+      allow read, write: if signedIn() && request.auth.uid == userEmail;
+    }
+    match /flags/{userEmail}/flags/{flagId} {
+      allow read, write: if signedIn() && request.auth.uid == userEmail;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -2,6 +2,7 @@
 
 import { ClientSideSuspense, RoomProvider, useOthers } from "@liveblocks/react/suspense";
 import { Spinner } from "../Spinner";
+import { SnapshotPreview } from "../Editor/SnapshotPreview";
 import LiveCursorProvider from "./LiveCursorProvider";
 import { collectionGroup, doc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/firebase";
@@ -69,7 +70,9 @@ function RoomProviderWrapper({
 
   return (
     <RoomProvider id={roomId} initialPresence={{ cursor: null }}>
-      <ClientSideSuspense fallback={<div className="flex flex-col items-center space-y-2 mt-32 w-full"><Spinner size="lg" /><p className="animate-pulse">Loading Collabrative Note...</p></div>}>
+      {/* While Liveblocks connects (can take seconds), show the stored HTML
+          snapshot read-only instead of a blocking spinner. */}
+      <ClientSideSuspense fallback={<div className="mt-14"><SnapshotPreview noteId={roomId} /></div>}>
         <LiveCursorProvider>
           <UsersPresenceDetector onPresenceChange={handlePresenceChange} />
           {useLiveblocks ? children : <NotesPage noteId={roomId} />}

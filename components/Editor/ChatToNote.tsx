@@ -37,6 +37,8 @@ function ChatToNote({doc}:{doc:Y.Doc}) {
                 setQuestion("");
                 setSummary(message.response);
                 toast.success("Question asked successfully!");
+            } else {
+                toast.error("AI request failed. Please try again.");
             }
         })
     }

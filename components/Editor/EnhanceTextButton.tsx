@@ -162,7 +162,17 @@ export function EnhanceTextButton({ editor }: EnhanceTextButtonProps) {
   const Components = useComponentsContext()!;
   const [isEnhancing, setIsEnhancing] = useState(false);
 
+  // Toggle the AI shimmer animation on the DOM elements of the selected
+  // blocks while the enhance request is in flight (see globals.css).
+  const setShimmer = (blocks: { id: string }[], on: boolean) => {
+    blocks.forEach((block) => {
+      const el = editor.domElement?.querySelector(`[data-id="${block.id}"]`);
+      el?.classList.toggle("enhance-shimmer", on);
+    });
+  };
+
   const handleEnhance = async () => {
+    let shimmerBlocks: { id: string }[] = [];
     try {
       // Get the current selection
       const selection = editor.getSelection();
@@ -186,7 +196,9 @@ export function EnhanceTextButton({ editor }: EnhanceTextButtonProps) {
       }
 
       setIsEnhancing(true);
-      
+      shimmerBlocks = selection.blocks;
+      setShimmer(shimmerBlocks, true);
+
       const response = await fetch("/api/enhance-text", {
         method: "POST",
         headers: {
@@ -220,6 +232,9 @@ export function EnhanceTextButton({ editor }: EnhanceTextButtonProps) {
       console.error("Error enhancing text:", error);
       toast.error("Failed to enhance text. Please try again.");
     } finally {
+      // On success the shimmering blocks were replaced; on failure this
+      // removes the effect from the still-present originals.
+      setShimmer(shimmerBlocks, false);
       setIsEnhancing(false);
     }
   };

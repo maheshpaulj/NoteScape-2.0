@@ -1,9 +1,14 @@
-'use client'	
+'use client'
 
-import EmojiPicker, {Theme} from 'emoji-picker-react'
+import dynamic from 'next/dynamic'
+import type { Theme } from 'emoji-picker-react'
 import { useTheme } from "next-themes"
 
 import {Popover,PopoverContent,PopoverTrigger} from '@/components/ui/popover'
+
+// emoji-picker-react is heavy; load it only when the popover is used.
+// Theme is imported type-only so the package stays out of the main chunk.
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false })
 
 interface IconPickerProps {
   onChange:(icon:string) => void
@@ -15,14 +20,7 @@ export function IconPicker ({onChange,children,asChild}:IconPickerProps) {
 
   const {resolvedTheme} = useTheme()
 
-  const currentTheme = (resolvedTheme || 'light') as keyof typeof themeMap
-
-  const themeMap = {
-    "dark":Theme.DARK,
-    "light":Theme.LIGHT
-  }
-
-  const theme = themeMap[currentTheme]
+  const theme = (resolvedTheme === 'dark' ? 'dark' : 'light') as Theme
 
 return (
     <Popover>

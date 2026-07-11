@@ -19,27 +19,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { db } from "@/firebase";
-import { query, collectionGroup, where, DocumentData, Timestamp } from "firebase/firestore";
-import { useUser } from "@clerk/nextjs";
 import { deleteNote, restoreNote } from "@/actions/actions";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/Modals/ConfirmModal";
-
-interface RoomDocument extends DocumentData {
-  title: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  role: "owner" | "editor";
-  roomId: string;
-  userId: string;
-  parentNoteId: string | null;
-  archived: boolean;
-  icon: string;
-  coverImage: string;
-  quickAccess: boolean;
-}
+import { useRooms } from "@/hooks/useRooms";
+import { RoomDocument } from "@/types/types";
 
 interface NoteWithChildren extends RoomDocument {
   children?: NoteWithChildren[];
@@ -47,23 +31,14 @@ interface NoteWithChildren extends RoomDocument {
 
 export default function TrashPage() {
   const router = useRouter();
-  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortCriterion, setSortCriterion] = useState<"updatedAt" | "title" | "createdAt">("updatedAt");
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
   const [notesWithHierarchy, setNotesWithHierarchy] = useState<NoteWithChildren[]>([]);
 
-  const [data] = useCollection(
-    user &&
-      query(
-        collectionGroup(db, "rooms"),
-        where("userId", "==", user.emailAddresses[0].toString())
-      )
-  );
+  const { rooms } = useRooms();
 
   useEffect(() => {
-    if (!data) return;
-
     const buildHierarchy = (notes: RoomDocument[]) => {
       const notesMap = new Map<string, NoteWithChildren>();
       const rootNotes: NoteWithChildren[] = [];
@@ -112,16 +87,11 @@ export default function TrashPage() {
       }));
     };
 
-    const grouped = data.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    } as unknown as RoomDocument));
-
-    const hierarchy = buildHierarchy(grouped);
+    const hierarchy = buildHierarchy(rooms);
     const sorted = sortNotes(hierarchy);
     const filtered = filterNotes(sorted);
     setNotesWithHierarchy(filtered);
-  }, [data, sortCriterion, searchQuery]);
+  }, [rooms, sortCriterion, searchQuery]);
 
   const handleDelete = async (noteId: string) => {
     try {

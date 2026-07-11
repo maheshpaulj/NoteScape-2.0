@@ -1,11 +1,11 @@
 'use client'
 import { cn } from "@/lib/utils"
-import { ChevronDown, ChevronRight, LucideIcon, MoreHorizontal, Plus, Star, Trash } from "lucide-react"
+import { ChevronDown, ChevronRight, Copy, LucideIcon, MoreHorizontal, Plus, Star, Trash } from "lucide-react"
 import { Skeleton } from "../ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { useUser } from "@clerk/nextjs";
-import { startTransition } from "react";
-import { addNoteToQuickAccess, archiveNote, createNewNote, removeNoteFromQuickAccess, removeUserFromNote } from "@/actions/actions";
+import { startTransition, useState } from "react";
+import { addNoteToQuickAccess, archiveNote, createNewNote, duplicateNote, removeNoteFromQuickAccess, removeUserFromNote } from "@/actions/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -20,6 +20,8 @@ import {
   AlertDialogTrigger,
 } from "../ui/alert-dialog"
 
+export const NOTE_DRAG_TYPE = "application/x-notescape-note";
+
 interface ItemProps {
   id?: string;
   documentIcon?:string
@@ -33,12 +35,39 @@ interface ItemProps {
   icon:LucideIcon
   isEditor?: boolean
   quickAccess?: boolean
+  /** Called when another note is dropped onto this one (nesting). */
+  onMoveNote?: (draggedId: string, targetId: string) => void
 }
 
-export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,level=0,onExpand,expanded, isEditor, quickAccess}:ItemProps) {
+export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,level=0,onExpand,expanded, isEditor, quickAccess, onMoveNote}:ItemProps) {
   const ChevronIcon = expanded ? ChevronDown : ChevronRight
   const { user } = useUser();
   const router = useRouter();
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const draggable = !!id && !isEditor && !!onMoveNote;
+
+  const handleDragStart = (e: React.DragEvent) => {
+    if (!id) return;
+    e.dataTransfer.setData(NOTE_DRAG_TYPE, id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!draggable || !e.dataTransfer.types.includes(NOTE_DRAG_TYPE)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDragOver(true);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    setIsDragOver(false);
+    if (!id || !onMoveNote) return;
+    const draggedId = e.dataTransfer.getData(NOTE_DRAG_TYPE);
+    if (!draggedId || draggedId === id) return;
+    e.preventDefault();
+    onMoveNote(draggedId, id);
+  };
 
   const handleExpand = (event:React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation()
@@ -72,6 +101,23 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
       })
     } catch (error) {
       toast.error("failed to delete note");
+      console.error(error);
+    }
+  }
+
+  function handleDuplicate(id: string) {
+    try {
+      startTransition(async() => {
+        const result = await duplicateNote(id);
+        if (result.success && result.noteId) {
+          toast.success("Note duplicated");
+          router.push(`/notes/${result.noteId}`);
+        } else {
+          toast.error(result.error || "Failed to duplicate note");
+        }
+      })
+    } catch (error) {
+      toast.error("failed to duplicate note");
       console.error(error);
     }
   }
@@ -115,8 +161,14 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
 return (
     <div className={cn(`group min-h-[27px] text-sm max-md:text-xl py-1 pr-3 w-full hover:bg-primary/5
     flex items-center text-muted-foreground font-medium touch-none`,
-    active && 'bg-primary/5 text-primary')}
-     onClick={onClick} role="button" style={{paddingLeft:level ? `${(level * 12) + 12}px` :'12px'}}>
+    active && 'bg-primary/5 text-primary',
+    isDragOver && 'bg-primary/10 outline outline-1 outline-primary/40 rounded-sm')}
+     onClick={onClick} role="button" style={{paddingLeft:level ? `${(level * 12) + 12}px` :'12px'}}
+     draggable={draggable}
+     onDragStart={handleDragStart}
+     onDragOver={handleDragOver}
+     onDragLeave={() => setIsDragOver(false)}
+     onDrop={handleDrop}>
       {!!id && (
         <div className="h-full rounded-sm hover:bg-neutral-300 dark:bg-neutral-600 mr-1" onClick={handleExpand} role="button">
           <ChevronIcon className="w-4 h-4 shrink-0 text-muted-foreground/50"/>
@@ -157,6 +209,12 @@ return (
                 <DropdownMenuItem onClick={() => handleRemoveFromQuickAccess(id)} className="cursor-pointer">
                   <Star className="w-4 h-4 mr-2" fill="hsl(var(--foreground))"/>
                   Remove from Quick Access
+                </DropdownMenuItem>
+              )}
+              {!isEditor && (
+                <DropdownMenuItem onClick={() => handleDuplicate(id)} className="cursor-pointer">
+                  <Copy className="w-4 h-4 mr-2"/>
+                  Duplicate
                 </DropdownMenuItem>
               )}
               {isEditor ? <AlertDialog>

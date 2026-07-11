@@ -1,39 +1,59 @@
 'use client';
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-import { Item } from "./Item";
+import { Item, NOTE_DRAG_TYPE } from "./Item";
 import { FileIcon } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
-import { collectionGroup, DocumentData, query, Timestamp, where } from "firebase/firestore";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { db } from "@/firebase";
-
-interface RoomDocument extends DocumentData {
-  title: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  role: "owner" | "editor";
-  roomId: string;
-  userId: string;
-  parentNoteId: string | null;
-  archived: boolean;
-  icon: string;
-  coverImage: string;
-  quickAccess: boolean;
-}
+import { useRooms } from "@/hooks/useRooms";
+import { RoomDocument } from "@/types/types";
+import { moveNote } from "@/actions/actions";
+import { cn } from "@/lib/utils";
 
 export function DocumentList() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useUser();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [groupedData, setGroupedData] = useState<{
-    owner: RoomDocument[];
-    editor: RoomDocument[];
-    quickAccess: RoomDocument[];
-  }>({ owner: [], editor: [], quickAccess: [] });
+  const [isRootDragOver, setIsRootDragOver] = useState(false);
+  const { rooms, loading } = useRooms();
+
+  // Drop one note onto another to nest it; drop on the "My Notes" header to
+  // move it back to the top level. The rooms store live-updates the tree.
+  const handleMoveNote = async (draggedId: string, newParentId: string | null) => {
+    // Client-side guard: don't nest a note inside its own subtree.
+    if (newParentId) {
+      const childrenOf = (id: string): string[] =>
+        rooms.filter((r) => r.parentNoteId === id).flatMap((r) => [r.roomId, ...childrenOf(r.roomId)]);
+      if (draggedId === newParentId || childrenOf(draggedId).includes(newParentId)) {
+        toast.error("Cannot move a note into its own sub-note");
+        return;
+      }
+    }
+    const result = await moveNote(draggedId, newParentId);
+    if (result.success) {
+      toast.success("Note moved");
+    } else {
+      toast.error(result.error || "Failed to move note");
+    }
+  };
+
+  const rootDropProps = {
+    onDragOver: (e: React.DragEvent) => {
+      if (!e.dataTransfer.types.includes(NOTE_DRAG_TYPE)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setIsRootDragOver(true);
+    },
+    onDragLeave: () => setIsRootDragOver(false),
+    onDrop: (e: React.DragEvent) => {
+      setIsRootDragOver(false);
+      const draggedId = e.dataTransfer.getData(NOTE_DRAG_TYPE);
+      if (!draggedId) return;
+      e.preventDefault();
+      handleMoveNote(draggedId, null);
+    },
+  };
 
   const onExpand = (documentId: string) => {
     setExpanded((prevExpanded) => ({
@@ -46,48 +66,26 @@ export function DocumentList() {
     router.push(`/notes/${documentId}`);
   };
 
-  const [data, loading] = useCollection(
-    user &&
-      query(
-        collectionGroup(db, "rooms"),
-        where("userId", "==", user.emailAddresses[0].toString())
-      )
-  );
-
-  useEffect(() => {
-    if (!data) return;
-
-    const grouped = data.docs.reduce<{
+  const groupedData = useMemo(() => {
+    return rooms.reduce<{
       owner: RoomDocument[];
       editor: RoomDocument[];
       quickAccess: RoomDocument[];
     }>(
-      (acc, doc) => {
-        const roomData = doc.data() as RoomDocument;
+      (acc, roomData) => {
         if (roomData.role === "owner") {
-          acc.owner.push({
-            id: doc.id,
-            ...roomData,
-          });
+          acc.owner.push(roomData);
         } else {
-          acc.editor.push({
-            id: doc.id,
-            ...roomData,
-          });
+          acc.editor.push(roomData);
         }
         if (roomData.quickAccess) {
-          acc.quickAccess.push({
-            id: doc.id,
-            ...roomData,
-          })
+          acc.quickAccess.push(roomData);
         }
         return acc;
       },
       { owner: [], editor: [], quickAccess: [] }
     );
-
-    setGroupedData(grouped);
-  }, [data]);
+  }, [rooms]);
 
   const renderAllNotes = (
     notes: RoomDocument[],
@@ -110,6 +108,7 @@ export function DocumentList() {
           expanded={expanded[note.roomId]}
           isEditor={note.role === "editor"}
           quickAccess={note.quickAccess}
+          onMoveNote={(draggedId, targetId) => handleMoveNote(draggedId, targetId)}
         />
         {expanded[note.roomId] && renderAllNotes(notes, note.roomId, depth + 1)}
       </div>
@@ -139,6 +138,7 @@ export function DocumentList() {
           expanded={expanded[note.roomId]}
           isEditor={note.role === "editor"}
           quickAccess={note.quickAccess}
+          onMoveNote={(draggedId, targetId) => handleMoveNote(draggedId, targetId)}
         />
         {expanded[note.roomId] && renderLimitedNotes(notes, note.roomId, depth + 1)}
       </div>
@@ -176,7 +176,14 @@ export function DocumentList() {
 
       {groupedData.owner.length > 0 && (
         <>
-          <h3 className="text-sm font-semibold text-secondary-foreground mt-4 max-md:text-2xl">
+          <h3
+            className={cn(
+              "text-sm font-semibold text-secondary-foreground mt-4 max-md:text-2xl rounded-sm px-1 -mx-1",
+              isRootDragOver && "bg-primary/10 outline outline-1 outline-primary/40"
+            )}
+            title="Drop a note here to move it to the top level"
+            {...rootDropProps}
+          >
             My Notes
           </h3>
           {renderLimitedNotes(groupedData.owner)}

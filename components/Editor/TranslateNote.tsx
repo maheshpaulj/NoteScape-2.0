@@ -61,6 +61,8 @@ function TranslateNote({doc}:{doc:Y.Doc}) {
                 const { translated_text } = await res.json();
                 setSummary(translated_text);
                 toast.success("Translated Note successfully!");
+            } else {
+                toast.error("Translation failed. Please try again.");
             }
         })
     }

@@ -2,103 +2,29 @@
 'use client';
 
 import { useState, useEffect, useMemo, useTransition } from 'react';
-import { createNewNote, getAllUserReminders } from '@/actions/actions';
+import { createNewNote, getAllUserFlags, getAllUserReminders } from '@/actions/actions';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@clerk/nextjs';
-import { PlusCircle, Pin, Clock, Search, ChevronDown, ChevronUp, AlarmClock, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Pin, Clock, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { query, collectionGroup, where, getDocs, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { Timestamp } from 'firebase/firestore';
 import { Spinner } from '@/components/Spinner';
-import { Reminder } from '@/types/types';
-import { isPast, isToday, isTomorrow, format as formatDateFns } from 'date-fns';
+import { Flag, Reminder, RoomDocument } from '@/types/types';
+import { useRooms } from '@/hooks/useRooms';
+import { HomeCalendarWidget } from '@/components/Reminders/HomeCalendarWidget';
 
-interface NoteType {
-  roomId: string;
-  title: string;
-  icon: string;
-  updatedAt: Timestamp;
-  quickAccess: boolean;
-  archived: boolean;
-  userId: string;
-}
-
-// New Component: A widget to display a summary of reminders.
-const RemindersWidget = ({
-  missedCount,
-  upcomingReminders,
-  onNavigate,
-}: {
-  missedCount: number;
-  upcomingReminders: Reminder[];
-  onNavigate: () => void;
-}) => {
-  // Don't render the widget if there is nothing to show.
-  if (missedCount === 0 && upcomingReminders.length === 0) {
-    return null;
-  }
-
-  const formatReminderTime = (time: string | Date) => {
-    const date = new Date(time);
-    if (isToday(date)) return `Today at ${formatDateFns(date, 'h:mm a')}`;
-    if (isTomorrow(date)) return `Tomorrow at ${formatDateFns(date, 'h:mm a')}`;
-    return formatDateFns(date, 'MMM d, h:mm a');
-  };
-
-  return (
-    <div
-      onClick={onNavigate}
-      className="mb-8 p-4 border rounded-lg cursor-pointer transition-all bg-card hover:border-gray-400"
-    >
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-2">
-          <AlarmClock className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-xl font-semibold">Reminders</h2>
-        </div>
-        <span className="text-sm hover:underline">View all</span>
-      </div>
-      <div className="flex flex-col md:flex-row gap-4">
-        {missedCount > 0 && (
-          <div className="p-3 rounded-md bg-destructive/10 flex-1">
-            <div className="flex items-center gap-2 text-red-500">
-              <AlertTriangle className="h-4 w-4" />
-              <span className="font-semibold">Missed Reminders</span>
-            </div>
-            <p className="text-2xl font-bold text-red-500 mt-1">{missedCount}</p>
-          </div>
-        )}
-        {upcomingReminders.length > 0 && (
-          <div className="flex-1 p-3 rounded-md bg-accent/50">
-            <h3 className="font-semibold text-muted-foreground mb-2">Upcoming</h3>
-            <ul className="space-y-2">
-              {upcomingReminders.map((reminder) => (
-                <li key={reminder.id} className="text-sm flex justify-between items-center gap-4">
-                  <span className="truncate">{reminder.message}</span>
-                  <span className="text-muted-foreground whitespace-nowrap">
-                    {formatReminderTime(reminder.reminderTime)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+type NoteType = RoomDocument;
 
 
 export default function Page() {
   const { user } = useUser();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [allNotes, setAllNotes] = useState<NoteType[]>([]);
-  const [recentNotes, setRecentNotes] = useState<NoteType[]>([]);
-  const [pinnedNotes, setPinnedNotes] = useState<NoteType[]>([]);
+  const { rooms, loading } = useRooms();
   const [allReminders, setAllReminders] = useState<Reminder[]>([]);
+  const [allFlags, setAllFlags] = useState<Flag[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
   const [showText, setShowText] = useState(false);
   const [expandedRecent, setExpandedRecent] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<NoteType[]>([]);
@@ -113,57 +39,28 @@ export default function Page() {
 
   useEffect(() => {
     if (!user) return;
-
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        const userEmail = user.emailAddresses[0].emailAddress;
-
-        // Fetch notes and reminders in parallel for efficiency
-        const [notesSnapshot, remindersData] = await Promise.all([
-          getDocs(query(collectionGroup(db, 'rooms'), where('userId', '==', userEmail))),
-          getAllUserReminders()
-        ]);
-        
-        // Process Notes
-        const allFetchedNotes = notesSnapshot.docs.map(doc => ({ ...doc.data(), roomId: doc.id })) as NoteType[];
-        const filteredNotes = allFetchedNotes.filter(note => !note.archived);
-        const pinnedData = filteredNotes.filter(note => note.quickAccess);
-        const nonPinnedNotes = filteredNotes
-          .filter(note => !note.quickAccess)
-          .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
-        const initialRecentNotes = nonPinnedNotes.slice(0, 6);
-        
-        setAllNotes(filteredNotes);
-        setRecentNotes(initialRecentNotes);
-        setPinnedNotes(pinnedData);
-        
-        // Set Reminders
-        setAllReminders(remindersData);
-
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchAllData();
+    Promise.all([getAllUserReminders(), getAllUserFlags()])
+      .then(([reminders, flags]) => {
+        setAllReminders(reminders);
+        setAllFlags(flags);
+      })
+      .catch((error) => console.error('Error fetching reminders:', error));
   }, [user]);
 
-  // Process reminders with useMemo for performance
-  const { missedRemindersCount, upcomingReminders } = useMemo(() => {
-    const missed = allReminders.filter(
-      (r) => !r.isDone && isPast(new Date(r.reminderTime))
-    ).length;
-
-    const upcoming = allReminders
-      .filter((r) => !r.isDone && (isToday(new Date(r.reminderTime)) || isTomorrow(new Date(r.reminderTime))) && !isPast(new Date(r.reminderTime)))
-      .sort((a, b) => new Date(a.reminderTime).getTime() - new Date(b.reminderTime).getTime())
-      .slice(0, 5);
-    
-    return { missedRemindersCount: missed, upcomingReminders: upcoming };
-  }, [allReminders]);
+  // Notes come live from the shared rooms store (cached in IndexedDB, so this
+  // renders instantly on revisit).
+  const { allNotes, pinnedNotes, recentNotes } = useMemo(() => {
+    const filteredNotes = rooms.filter(note => !note.archived);
+    const pinned = filteredNotes.filter(note => note.quickAccess);
+    const nonPinned = filteredNotes
+      .filter(note => !note.quickAccess)
+      .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+    return {
+      allNotes: filteredNotes,
+      pinnedNotes: pinned,
+      recentNotes: expandedRecent ? nonPinned : nonPinned.slice(0, 6),
+    };
+  }, [rooms, expandedRecent]);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -187,10 +84,6 @@ export default function Page() {
     });
   };
 
-  const handleNavigateToReminders = () => {
-      router.push('/reminders');
-  };
-  
   const formatDate = (timestamp: Timestamp | undefined) => {
     if (!timestamp) return '';
     const date = new Date(timestamp.seconds * 1000);
@@ -203,15 +96,6 @@ export default function Page() {
   
   const toggleShowMore = () => {
     setExpandedRecent(!expandedRecent);
-    const nonPinnedNotes = allNotes
-      .filter(note => !note.quickAccess)
-      .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
-      
-    if (!expandedRecent) {
-      setRecentNotes(nonPinnedNotes);
-    } else {
-      setRecentNotes(nonPinnedNotes.slice(0, 6));
-    }
   };
   
   const NoteCard = ({ note, isPinned = false }: { note: NoteType, isPinned?: boolean }) => (
@@ -283,14 +167,8 @@ export default function Page() {
         </div>
       ) : (
         <>
-          {/* Reminder Widget is rendered here */}
-          {!isSearching && (
-            <RemindersWidget 
-              missedCount={missedRemindersCount} 
-              upcomingReminders={upcomingReminders} 
-              onNavigate={handleNavigateToReminders}
-            />
-          )}
+          {/* Calendar-style reminders widget */}
+          {!isSearching && <HomeCalendarWidget reminders={allReminders} flags={allFlags} />}
 
           {recentNotes.length === 0 && pinnedNotes.length === 0 && !isSearching ? (
             <div className="flex flex-col justify-center items-center space-y-4 flex-1">

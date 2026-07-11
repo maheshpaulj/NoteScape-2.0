@@ -19,31 +19,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { db } from "@/firebase";
-import { query, collectionGroup, where, DocumentData, Timestamp } from "firebase/firestore";
-import { useUser } from "@clerk/nextjs";
 import { formatDistanceToNow } from 'date-fns';
 import { createNewNote } from "@/actions/actions";
 import { toast } from "sonner";
-
-interface RoomDocument extends DocumentData {
-  title: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  role: "owner" | "editor";
-  roomId: string;
-  userId: string;
-  parentNoteId: string | null;
-  archived: boolean;
-  icon: string;
-  coverImage: string;
-  quickAccess: boolean;
-}
+import { useRooms } from "@/hooks/useRooms";
+import { RoomDocument } from "@/types/types";
 
 export default function NotesPage() {
   const router = useRouter();
-  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortCriterion, setSortCriterion] = useState<"updatedAt" | "title" | "createdAt">("updatedAt");
   const [groupedData, setGroupedData] = useState<{
@@ -53,17 +36,9 @@ export default function NotesPage() {
 
   const [ isPending, startTransition ] = useTransition();
 
-  const [data] = useCollection(
-    user &&
-      query(
-        collectionGroup(db, "rooms"),
-        where("userId", "==", user.emailAddresses[0].toString())
-      )
-  );
+  const { rooms } = useRooms();
 
   useEffect(() => {
-    if (!data) return;
-  
     const sortNotes = (notes: RoomDocument[]) => {
       return [...notes].sort((a, b) => {
         if (sortCriterion === "title") {
@@ -81,33 +56,26 @@ export default function NotesPage() {
       );
     };
   
-    const grouped = data.docs.reduce<{
+    const grouped = rooms.reduce<{
       owner: RoomDocument[];
       editor: RoomDocument[];
     }>(
-      (acc, doc) => {
-        const roomData = doc.data() as RoomDocument;
+      (acc, roomData) => {
         if (roomData.role === "owner") {
-          acc.owner.push({
-            id: doc.id,
-            ...roomData,
-          });
+          acc.owner.push(roomData);
         } else {
-          acc.editor.push({
-            id: doc.id,
-            ...roomData,
-          });
+          acc.editor.push(roomData);
         }
         return acc;
       },
       { owner: [], editor: [] }
     );
-  
+
     setGroupedData({
       owner: sortNotes(filterNotes(grouped.owner)),
       editor: sortNotes(filterNotes(grouped.editor)),
     });
-  }, [data, sortCriterion, searchQuery]);
+  }, [rooms, sortCriterion, searchQuery]);
   
   
 

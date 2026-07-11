@@ -53,14 +53,41 @@ export function Sidebar() {
     const touchCurrentX = e.touches[0].clientX
     const diff = touchCurrentX - touchStartXRef.current
 
-    if (isCollapsed && diff > 50) {
-      // Swipe right to open
-      resetWidth()
-    } else if (!isCollapsed && diff < -50) {
+    if (!isCollapsed && diff < -50) {
       // Swipe left to close
       collapse()
     }
   }
+
+  // Swipe-right-from-left-edge to open. This must listen on the document:
+  // when collapsed the <aside> has zero width, so it can never receive the
+  // touch that should open it.
+  useEffect(() => {
+    if (!isMobile) return
+
+    let startX: number | null = null
+
+    const onTouchStart = (e: globalThis.TouchEvent) => {
+      const x = e.touches[0].clientX
+      // Only track swipes that begin near the left edge of the screen.
+      startX = x < 40 ? x : null
+    }
+
+    const onTouchMove = (e: globalThis.TouchEvent) => {
+      if (startX === null || !isCollapsed) return
+      if (e.touches[0].clientX - startX > 50) {
+        startX = null
+        resetWidth()
+      }
+    }
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true })
+    document.addEventListener('touchmove', onTouchMove, { passive: true })
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart)
+      document.removeEventListener('touchmove', onTouchMove)
+    }
+  }, [isMobile, isCollapsed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMouseDown = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.preventDefault()
@@ -89,6 +116,16 @@ export function Sidebar() {
     isResizingRef.current = false
     document.removeEventListener("mousemove", handleMouseMove)
     document.removeEventListener('mouseup', handleMouseUp)
+    // Remember the chosen width across sessions.
+    if (sidebarRef.current?.style.width) {
+      localStorage.setItem('notescape-sidebar-width', parseInt(sidebarRef.current.style.width).toString())
+    }
+  }
+
+  const getStoredWidth = () => {
+    const stored = parseInt(localStorage.getItem('notescape-sidebar-width') || '')
+    if (isNaN(stored)) return 240
+    return Math.min(480, Math.max(240, stored))
   }
 
   const resetWidth = () => {
@@ -96,9 +133,10 @@ export function Sidebar() {
       setIsCollapsed(false)
       setIsResetting(true)
 
-      sidebarRef.current.style.width = isMobile ? '100%' : '240px'
-      navbarRef.current.style.setProperty("width", isMobile ? '0' : 'calc(100% - 240px)')
-      navbarRef.current.style.setProperty('left', isMobile ? '100%' : '240px')
+      const width = getStoredWidth()
+      sidebarRef.current.style.width = isMobile ? '100%' : `${width}px`
+      navbarRef.current.style.setProperty("width", isMobile ? '0' : `calc(100% - ${width}px)`)
+      navbarRef.current.style.setProperty('left', isMobile ? '100%' : `${width}px`)
       setTimeout(() => {
         setIsResetting(false)
       }, 300);
@@ -201,7 +239,7 @@ export function Sidebar() {
           />
         </div>
         <div className="absolute bottom-0 w-full text-center font-bold text-muted-foreground">
-          <p className="text-sm">NoteScape v2.5.2</p>
+          <p className="text-sm">NoteScape v2.6</p>
         </div>
       </aside>
       <div

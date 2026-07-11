@@ -1,13 +1,19 @@
 // Import the functions you need from the SDKs you need
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  getFirestore,
+} from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_KEY,
+  // NEXT_PUBLIC_FIREBASE_KEY is required for Firebase Auth (the Clerk →
+  // Firebase bridge that security rules depend on); FIREBASE_KEY is kept as
+  // a fallback for existing setups.
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_KEY || process.env.FIREBASE_KEY,
   authDomain: "notescape-db.firebaseapp.com",
   projectId: "notescape-db",
   storageBucket: "notescape-db.firebasestorage.app",
@@ -17,6 +23,23 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+
+// Persistent IndexedDB cache: notes and the sidebar render instantly from the
+// local copy on revisit (and offline) while Firestore syncs in the background.
+// initializeFirestore throws if called twice (e.g. HMR), so fall back to the
+// already-initialized instance.
+function createDb() {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch {
+    return getFirestore(app);
+  }
+}
+
+const db = createDb();
 
 export { db }

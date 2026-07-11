@@ -2,16 +2,18 @@
 'use client';
 
 import { useEffect, useState, useTransition, useRef, useCallback, useMemo } from 'react';
-import { scheduleReminder, updateReminder } from '@/actions/actions';
+import { createFlag, scheduleReminder, updateReminder } from '@/actions/actions';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Clock, ChevronsUpDown } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, ChevronsUpDown, Loader2, Plus, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Reminder } from '@/types/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Flag, Reminder, RepeatInterval } from '@/types/types';
 
 // --- Reusable iOS-style Time Picker Column ---
 interface TimePickerColumnProps {
@@ -136,12 +138,19 @@ interface ReminderFormProps {
   initialData?: Reminder | null;
   onSave: (savedReminder: Reminder) => void;
   onCancel: () => void;
+  allFlags?: Flag[];
+  onFlagCreated?: (newFlag: Flag) => void;
 }
 
-export function ReminderForm({ initialData, onSave, onCancel }: ReminderFormProps) {
+export function ReminderForm({ initialData, onSave, onCancel, allFlags = [], onFlagCreated }: ReminderFormProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState('09:00'); // Stored as 'HH:mm'
   const [message, setMessage] = useState('');
+  const [repeat, setRepeat] = useState<RepeatInterval>('none');
+  const [flagIds, setFlagIds] = useState<string[]>([]);
+  const [isCreatingFlag, setIsCreatingFlag] = useState(false);
+  const [newFlagName, setNewFlagName] = useState('');
+  const [newFlagColor, setNewFlagColor] = useState('#808080');
   const [isPending, startTransition] = useTransition();
 
   const timePickerOptions = useMemo(() => ({
@@ -156,6 +165,8 @@ export function ReminderForm({ initialData, onSave, onCancel }: ReminderFormProp
       setDate(initialDate);
       setTime(format(initialDate, 'HH:mm'));
       setMessage(initialData.message);
+      setRepeat(initialData.repeat || 'none');
+      setFlagIds(initialData.flagIds || []);
     } else {
       const now = new Date();
       if (now.getHours() >= 22) {
@@ -167,6 +178,8 @@ export function ReminderForm({ initialData, onSave, onCancel }: ReminderFormProp
       setDate(now);
       setTime(format(now, 'HH:mm'));
       setMessage('');
+      setRepeat('none');
+      setFlagIds([]);
     }
   }, [initialData]);
 
@@ -188,8 +201,8 @@ export function ReminderForm({ initialData, onSave, onCancel }: ReminderFormProp
     startTransition(async () => {
       try {
         const result = initialData
-          ? await updateReminder(initialData.id, reminderDateTime, message)
-          : await scheduleReminder(reminderDateTime, message);
+          ? await updateReminder(initialData.id, reminderDateTime, message, repeat, flagIds)
+          : await scheduleReminder(reminderDateTime, message, repeat, flagIds);
         if (result.success) {
           toast.success(`Reminder ${initialData ? 'updated' : 'scheduled'}!`);
           onSave(result.reminder);
@@ -273,6 +286,93 @@ export function ReminderForm({ initialData, onSave, onCancel }: ReminderFormProp
           </PopoverContent>
         </Popover>
       </div>
+
+      {/* Tag picker: toggle existing flags, or create a new one inline. */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {allFlags.map((flag) => {
+          const selected = flagIds.includes(flag.id);
+          return (
+            <Badge
+              key={flag.id}
+              onClick={() =>
+                setFlagIds((prev) =>
+                  selected ? prev.filter((id) => id !== flag.id) : [...prev, flag.id]
+                )
+              }
+              style={selected ? { backgroundColor: flag.color, color: 'white' } : { borderColor: flag.color }}
+              variant={selected ? 'default' : 'outline'}
+              className="cursor-pointer border px-2 py-0.5 select-none"
+            >
+              {flag.name}
+            </Badge>
+          );
+        })}
+        {isCreatingFlag ? (
+          <div className="flex items-center gap-1">
+            <Input
+              autoFocus
+              placeholder="Tag name"
+              value={newFlagName}
+              onChange={(e) => setNewFlagName(e.target.value)}
+              className="h-7 w-28 text-xs"
+            />
+            <Input
+              type="color"
+              value={newFlagColor}
+              onChange={(e) => setNewFlagColor(e.target.value)}
+              className="h-7 w-10 p-0.5"
+            />
+            <Button
+              type="button"
+              size="sm"
+              className="h-7"
+              disabled={isPending || !newFlagName}
+              onClick={() => {
+                startTransition(async () => {
+                  try {
+                    const newFlag = await createFlag(newFlagName, newFlagColor);
+                    onFlagCreated?.(newFlag);
+                    setFlagIds((prev) => [...prev, newFlag.id]);
+                    setNewFlagName('');
+                    setIsCreatingFlag(false);
+                  } catch {
+                    toast.error('Failed to create tag.');
+                  }
+                });
+              }}
+            >
+              {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Add'}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" className="h-7" onClick={() => setIsCreatingFlag(false)}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Badge
+            variant="outline"
+            className="cursor-pointer px-2 py-0.5 text-muted-foreground select-none"
+            onClick={() => setIsCreatingFlag(true)}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            New tag
+          </Badge>
+        )}
+      </div>
+
+      <Select value={repeat} onValueChange={(v) => setRepeat(v as RepeatInterval)} disabled={isPending}>
+        <SelectTrigger className="w-full">
+          <div className="flex items-center">
+            <Repeat className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Repeat" />
+          </div>
+        </SelectTrigger>
+        <SelectContent className="z-[99999]">
+          <SelectItem value="none">Does not repeat</SelectItem>
+          <SelectItem value="daily">Daily</SelectItem>
+          <SelectItem value="weekly">Weekly</SelectItem>
+          <SelectItem value="monthly">Monthly</SelectItem>
+        </SelectContent>
+      </Select>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={isPending}>

@@ -1,17 +1,24 @@
 // src/components/ReminderItem.tsx
 'use client';
 
-import { toggleReminderDone } from "@/actions/actions";
+import { snoozeReminder, toggleReminderDone } from "@/actions/actions";
 import { cn } from "@/lib/utils";
-import { format, isPast, isToday } from "date-fns";
-import { NotebookText, Pencil, Trash2 } from "lucide-react";
+import { format, isPast, isToday, startOfTomorrow } from "date-fns";
+import { AlarmClockOff, NotebookText, Pencil, Repeat, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
+import { toast } from "sonner";
 
 // UI Imports
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FlagManager } from "./FlagManager";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Flag, Reminder } from "@/types/types";
@@ -47,6 +54,22 @@ export const ReminderItem = ({
       // Notify the parent page to update its state for an instant UI change
       onUpdate({ id: reminder.id, isDone: checked });
     });
+  };
+
+  const handleSnooze = (minutes: number, label: string) => {
+    startTransition(async () => {
+      const result = await snoozeReminder(reminder.id, minutes);
+      if (result.success) {
+        onUpdate({ id: reminder.id, reminderTime: result.reminderTime, isDone: false });
+        toast.success(`Snoozed until ${label}`);
+      }
+    });
+  };
+
+  const minutesUntilTomorrowMorning = () => {
+    const tomorrow9am = startOfTomorrow();
+    tomorrow9am.setHours(9, 0, 0, 0);
+    return Math.round((tomorrow9am.getTime() - Date.now()) / 60000);
   };
 
   // --- Logic for Visual Styling and Date/Time Formatting ---
@@ -90,6 +113,13 @@ export const ReminderItem = ({
             </span>
           )}
 
+          {reminder.repeat && reminder.repeat !== "none" && (
+            <span className="flex items-center gap-1 whitespace-nowrap">
+              <Repeat className="h-3 w-3" />
+              {reminder.repeat}
+            </span>
+          )}
+
           {/* Render colored flag pills */}
           {reminder.flagIds.map(id => {
             const flag = flagMap.get(id);
@@ -124,6 +154,26 @@ export const ReminderItem = ({
           onFlagsChanged={(newFlagIds) => onUpdate({ id: reminder.id, flagIds: newFlagIds })}
           onFlagCreated={onFlagCreated}
         />
+        {!reminder.isDone && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" title="Snooze">
+                <AlarmClockOff className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleSnooze(10, "10 minutes from now")}>
+                10 minutes
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSnooze(60, "1 hour from now")}>
+                1 hour
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSnooze(minutesUntilTomorrowMorning(), "tomorrow 9 AM")}>
+                Tomorrow 9 AM
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         {!reminder.isDone && (
           <Button variant="ghost" size="icon" onClick={() => onEdit(reminder)}>
             <Pencil className="h-4 w-4 text-muted-foreground" />

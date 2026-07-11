@@ -18,6 +18,7 @@ import { ReminderForm } from '@/components/ReminderForm';
 import { NotificationPermissionBanner } from '@/components/Reminders/NotificationPermissionBanner';
 import { ReminderItem } from '@/components/Reminders/ReminderItem';
 import { ReminderFilterBar } from '@/components/Reminders/ReminderFilterBar';
+import { HomeCalendarWidget } from '@/components/Reminders/HomeCalendarWidget';
 import { Flag, Reminder } from '@/types/types';
 
 // Helper function to group reminders (no changes needed here)
@@ -165,6 +166,11 @@ export default function RemindersPage() {
           <Button size="sm" onClick={handleOpenAddDialog}><Plus className="h-4 w-4 mr-2" />Add Reminder</Button>
         </div>
         
+        {/* Same calendar overview widget as the home screen. */}
+        <div className="mt-4">
+          <HomeCalendarWidget reminders={reminders} flags={allFlags} />
+        </div>
+
         <ReminderFilterBar
           allFlags={allFlags}
           searchTerm={searchTerm}
@@ -174,7 +180,7 @@ export default function RemindersPage() {
           onClearFilters={handleClearFilters}
         />
 
-        <DialogContent><DialogHeader><DialogTitle>{editingReminder ? 'Edit Reminder' : 'Add a New Reminder'}</DialogTitle></DialogHeader><ReminderForm initialData={editingReminder} onSave={handleSave} onCancel={() => setIsDialogOpen(false)} /></DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>{editingReminder ? 'Edit Reminder' : 'Add a New Reminder'}</DialogTitle></DialogHeader><ReminderForm initialData={editingReminder} onSave={handleSave} onCancel={() => setIsDialogOpen(false)} allFlags={allFlags} onFlagCreated={handleFlagCreated} /></DialogContent>
         
         <div className="mt-4">
           {isLoading ? (

@@ -53,6 +53,23 @@
   "orientation": "portrait",
   "dir": "auto",
   "id": "notescape",
+  "shortcuts": [
+    {
+      "name": "Home",
+      "url": "/home",
+      "icons": [{ "src": "images/icons/Icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Reminders",
+      "url": "/reminders",
+      "icons": [{ "src": "images/icons/Icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "All Notes",
+      "url": "/allNotes",
+      "icons": [{ "src": "images/icons/Icon-96.png", "sizes": "96x96" }]
+    }
+  ],
   "screenshots": [
     {
       "src": "/assets/ss.png",

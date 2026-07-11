@@ -1,6 +1,13 @@
 "use client";
-import Editor from "@/components/Editor2"
+import dynamic from "next/dynamic";
+import { EditorSkeleton } from "@/components/Editor/shared";
 import { useDocumentData } from "react-firebase-hooks/firestore";
+
+// Code-split the Firebase-only editor; collaborative sessions never need it.
+const Editor = dynamic(() => import("@/components/Editor2"), {
+  ssr: false,
+  loading: () => <EditorSkeleton />,
+});
 import { doc, DocumentData, DocumentReference, Timestamp } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
@@ -35,10 +42,12 @@ function NotesPage({noteId}: {noteId: string}) {
   return (
     <div className="pb-40 mt-14">
       <Cover url={data?.coverImage} showAvatar={false}/>
-      <div className="md:max-w-3xl lg:max-w-4xl mx-auto h-full">
+      <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
         <Toolbar noteId={noteId} title={data?.title!} icon={data?.icon!} coverUrl={data?.coverImage!} /> {/* eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain */}
-        <Editor noteId={noteId} />
       </div>
+      {/* Full-width so clicks anywhere in the row focus the editor; the
+          content column itself is centered via .bn-editor padding. */}
+      <Editor noteId={noteId} />
     </div>
   )
 }
