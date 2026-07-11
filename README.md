@@ -112,7 +112,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [shadcn/ui](https://ui.shadcn.com/) for beautiful UI components
 
 ## 📱 Roadmap
-
+- [x] Reminders with push notifications
 - [ ] Enhanced mobile experience
 - [ ] Offline support
 - [ ] More AI-powered features
