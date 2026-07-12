@@ -105,12 +105,6 @@ body,
   --ring: 0 0% 18% !important;
 }
 
-@media (max-width: 640px) {
-  .bn-editor {
-    padding-inline: 13px !important;
-  }
-}
-
 /*
  * Caret fix: when a line of text exactly fills the editor column, clicking in
  * the empty space to the right of the last character used to resolve to the
@@ -138,30 +132,35 @@ body,
   min-width: 100%;
 }
 
-/* Force the BlockNote container + editor to fill the full main column instead
- * of BlockNote's default ~989px left-aligned box. This makes the whole column
- * clickable and lets the padding below center the content symmetrically. */
+/* The editor (ProseMirror) fills the full width & height of the note column so
+ * the entire area is clickable and the caret hook can map side-clicks to line
+ * ends. The text itself is centered in a responsive ~80vw column (capped to
+ * 56rem on large screens) via horizontal padding — that padding IS the gutter
+ * the caret hook needs. `.bn-editor` and `.ProseMirror` are the same element. */
 .bn-container,
 .bn-editor {
   width: 100% !important;
   max-width: 100% !important;
+  min-height: 100% !important;
+  background-color: transparent !important;
+  outline: none !important;
 }
 
-/* The editor spans the full main column (so a click anywhere in a line's row
- * lands in the editor) while the content itself stays centered at the same
- * width the title toolbar uses (max-w-4xl = 56rem). Padding-% is relative to
- * the containing block, which is now full-width. */
-@media (min-width: 641px) {
-  .bn-editor {
-    /* match the toolbar's md:max-w-3xl (48rem) */
-    padding-inline: max(calc((100% - 48rem) / 2), 1.5rem) !important;
-  }
+.bn-container {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-grow: 1 !important;
 }
 
-@media (min-width: 1024px) {
+.bn-editor {
+  flex-grow: 1 !important;
+  padding-inline: 10px !important;
+}
+
+@media (max-width: 640px) {
   .bn-editor {
-    /* match the toolbar's lg:max-w-4xl (56rem) */
-    padding-inline: max(calc((100% - 56rem) / 2), 1.5rem) !important;
+    /* near-full width on phones, small gutter */
+    padding-inline: 16px !important;
   }
 }
 

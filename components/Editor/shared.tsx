@@ -75,6 +75,36 @@ function isEmptyBlock(block: { content?: unknown } | undefined): boolean {
 }
 
 /**
+ * Ensures the document ends with exactly one empty paragraph.
+ * If it doesn't, we append one. If it has consecutive empty paragraphs
+ * at the end (and the cursor is not in the last one), we clean up the extra one.
+ */
+export function ensureTrailingEmptyParagraph(editor: BlockNoteEditor) {
+  const doc = editor.document;
+  if (doc.length === 0) {
+    editor.insertBlocks([{ type: "paragraph" }], doc[0] || "", "before");
+    return;
+  }
+
+  const lastBlock = doc[doc.length - 1];
+  const isParagraph = lastBlock.type === "paragraph";
+  const isEmpty = isEmptyBlock(lastBlock);
+
+  if (!isParagraph || !isEmpty) {
+    // Append a trailing empty paragraph
+    editor.insertBlocks([{ type: "paragraph" }], lastBlock, "after");
+  } else if (doc.length >= 2) {
+    const secondLastBlock = doc[doc.length - 2];
+    if (secondLastBlock.type === "paragraph" && isEmptyBlock(secondLastBlock)) {
+      const cursor = editor.getTextCursorPosition();
+      if (cursor && cursor.block.id !== lastBlock.id) {
+        editor.removeBlocks([lastBlock]);
+      }
+    }
+  }
+}
+
+/**
  * Notion-style click handling for the whole editor column, not just the text.
  * The handler is attached to a full-width `container` (so clicks in the empty
  * area around and below the text are caught) and runs in the capture phase so
@@ -95,13 +125,15 @@ export function useFullWidthCaret(
     const container = containerRef.current;
     if (!container) return;
 
-    const onMouseDown = (e: MouseEvent) => {
+    const onPointerDown = (e: PointerEvent) => {
+      // Ignore touch/gesture events to allow native scrolling and gestures on mobile
+      if (e.pointerType === "touch") return;
       if (e.button !== 0 || e.shiftKey) return;
 
       // Resolve the ProseMirror element by querying the DOM — editor.domElement
       // is unreliable across BlockNote versions (can be undefined), which made
       // this whole handler a no-op.
-      const pmEl = container.querySelector<HTMLElement>(".bn-editor");
+      const pmEl = container.querySelector<HTMLElement>(".ProseMirror");
       if (!pmEl) return;
 
       // Leave real editor UI (toolbar buttons, links, images, side menu) alone.
@@ -116,8 +148,8 @@ export function useFullWidthCaret(
 
       const rect = pmEl.getBoundingClientRect();
       const style = getComputedStyle(pmEl);
-      const contentLeft = rect.left + parseFloat(style.paddingLeft);
-      const contentRight = rect.right - parseFloat(style.paddingRight);
+      const contentLeft = rect.left + (parseFloat(style.paddingLeft || "0") || 0);
+      const contentRight = rect.right - (parseFloat(style.paddingRight || "0") || 0);
 
       const lastEl = pmEl.lastElementChild as HTMLElement | null;
       const contentBottom = lastEl ? lastEl.getBoundingClientRect().bottom : rect.bottom;
@@ -131,23 +163,32 @@ export function useFullWidthCaret(
       if (belowContent) {
         e.preventDefault();
         e.stopPropagation();
-        const doc = editor.document;
-        const last = doc[doc.length - 1];
-        if (last && !isEmptyBlock(last)) {
-          editor.insertBlocks([{ type: "paragraph" }], last, "after");
-        }
+        ensureTrailingEmptyParagraph(editor);
         const updated = editor.document;
         editor.setTextCursorPosition(updated[updated.length - 1], "end");
         editor.focus();
         return;
       }
 
-      // (2) Side padding → nearest character on that visual line. Resolve the
-      // caret as if the click happened just inside the content edge.
-      const clampedX = Math.min(
-        Math.max(e.clientX, contentLeft + 1),
-        contentRight - 1
-      );
+      // (2) Side padding → nearest character on that visual line.
+      const isRightClick = e.clientX > contentRight;
+      const direction = isRightClick ? "end" : "start";
+
+      const clampedX = isRightClick ? contentRight - 1 : contentLeft + 1;
+      const element = document.elementFromPoint(clampedX, e.clientY);
+      const blockEl = element?.closest("[data-id]");
+      if (blockEl) {
+        const blockId = blockEl.getAttribute("data-id");
+        if (blockId) {
+          e.preventDefault();
+          e.stopPropagation();
+          editor.setTextCursorPosition(blockId, direction);
+          editor.focus();
+          return;
+        }
+      }
+
+      // Fallback: range-based caret placement
       const range = caretRangeAt(clampedX, e.clientY);
       if (!range || !pmEl.contains(range.startContainer)) return;
       e.preventDefault();
@@ -158,9 +199,9 @@ export function useFullWidthCaret(
       selection?.addRange(range);
     };
 
-    // Capture phase so we run before ProseMirror's mousedown handler.
-    container.addEventListener("mousedown", onMouseDown, true);
-    return () => container.removeEventListener("mousedown", onMouseDown, true);
+    // Capture phase so we run before ProseMirror's handler.
+    container.addEventListener("pointerdown", onPointerDown, true);
+    return () => container.removeEventListener("pointerdown", onPointerDown, true);
   }, [editor, containerRef]);
 }
 

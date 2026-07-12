@@ -4,14 +4,18 @@ import { collectionGroup, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
 
-function useOwner(roomId:string) {
+function useOwner(roomId?: string) {
     const { user } = useUser();
     const [isOwner, setIsOwner] = useState(false);
     const [usersInRoom] = useCollection(
-        user && query(collectionGroup(db, "rooms"), where("roomId", "==", roomId))
+        user && roomId ? query(collectionGroup(db, "rooms"), where("roomId", "==", roomId)) : null
     );
 
     useEffect(() => {
+        if (!roomId) {
+            setIsOwner(false);
+            return;
+        }
         if(usersInRoom?.docs && usersInRoom.docs.length > 0){
             const owners = usersInRoom.docs.filter(
                 (note) => note.data().role === "owner"
@@ -19,9 +23,13 @@ function useOwner(roomId:string) {
 
             if(owners.some((owner) => owner.data().userId === user?.emailAddresses[0].toString())){
                 setIsOwner(true);
+            } else {
+                setIsOwner(false);
             }
+        } else {
+            setIsOwner(false);
         }
-    }, [usersInRoom, user])
+    }, [usersInRoom, user, roomId])
   return isOwner;
 }
 export default useOwner;

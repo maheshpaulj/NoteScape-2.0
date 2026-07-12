@@ -1,7 +1,7 @@
 'use client'
 
 import React from "react"
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import { MenuIcon } from "lucide-react"
 import { Title } from "./Title"
 import { doc, DocumentData, DocumentReference, Timestamp } from "firebase/firestore"
@@ -34,6 +34,7 @@ interface RoomDocument extends DocumentData {
 
 export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
   const params = useParams()
+  const pathname = usePathname()
   const { user } = useUser()
   const roomId = params.noteId?.toString()
   const isOwner = useOwner(roomId);
@@ -51,6 +52,33 @@ export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
         <Title.Skeleton />
         <div className="flex gap-x-2 items-center">
           <Menu.Skeleton/>
+        </div>
+      </nav>
+    )
+  }
+
+  if (!roomId) {
+    let pageTitle = "";
+    if (pathname === "/home") pageTitle = "Home";
+    else if (pathname === "/reminders") pageTitle = "Reminders";
+    else if (pathname === "/allNotes") pageTitle = "All Notes";
+    else if (pathname === "/trash") pageTitle = "Trash";
+    else if (pathname === "/profile") pageTitle = "Profile";
+    else pageTitle = "NoteScape";
+
+    return (
+      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex gap-x-4 items-center h-12">
+        {isCollapsed && (
+          <MenuIcon
+            className="w-10 h-10 text-muted-foreground scale-75 md:scale-100"
+            role="button"
+            onClick={onResetWidth}
+          />
+        )}
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-x-1 font-semibold text-sm max-md:text-base">
+            <span>{pageTitle}</span>
+          </div>
         </div>
       </nav>
     )

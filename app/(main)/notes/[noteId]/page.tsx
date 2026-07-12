@@ -41,14 +41,16 @@ function Page({params: {noteId}}: {params: {noteId: string}}) {
   }, [data]);
 
   return (
-    <div className="pb-40 mt-14">
+    <div className="mt-14 min-h-[calc(100vh-3.5rem)] flex flex-col">
       <Cover url={data?.coverImage} showAvatar={true}/>
-      <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
+      <div className="md:max-w-3xl lg:max-w-4xl mx-auto w-full">
         <Toolbar noteId={noteId} title={data?.title!} icon={data?.icon!} coverUrl={data?.coverImage!} /> {/* eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain */}
       </div>
       {/* Full-width so clicks anywhere in the row focus the editor; the
           content column itself is centered via .bn-editor padding. */}
-      <Editor noteId={noteId} />
+      <div className="flex-grow flex flex-col">
+        <Editor noteId={noteId} />
+      </div>
     </div>
   )
 }

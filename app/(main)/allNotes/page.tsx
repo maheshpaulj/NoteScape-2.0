@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Search, Plus, Filter } from "lucide-react";
+import { useRouter, useParams } from "next/navigation";
+import { Search, Plus, Filter, FileIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -19,114 +19,199 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatDistanceToNow } from 'date-fns';
-import { createNewNote } from "@/actions/actions";
+import { createNewNote, moveNote } from "@/actions/actions";
 import { toast } from "sonner";
 import { useRooms } from "@/hooks/useRooms";
 import { RoomDocument } from "@/types/types";
+import { Item } from "@/components/Sidebar/Item";
+import { cn } from "@/lib/utils";
+
+interface NoteWithChildren extends RoomDocument {
+  children?: NoteWithChildren[];
+}
 
 export default function NotesPage() {
   const router = useRouter();
+  const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortCriterion, setSortCriterion] = useState<"updatedAt" | "title" | "createdAt">("updatedAt");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [isRootDragOver, setIsRootDragOver] = useState(false);
   const [groupedData, setGroupedData] = useState<{
-    owner: RoomDocument[];
-    editor: RoomDocument[];
+    owner: NoteWithChildren[];
+    editor: NoteWithChildren[];
   }>({ owner: [], editor: [] });
 
-  const [ isPending, startTransition ] = useTransition();
-
+  const [isPending, startTransition] = useTransition();
   const { rooms } = useRooms();
 
   useEffect(() => {
-    const sortNotes = (notes: RoomDocument[]) => {
+    const buildHierarchy = (notes: RoomDocument[]) => {
+      const notesMap = new Map<string, NoteWithChildren>();
+      const rootNotes: NoteWithChildren[] = [];
+
+      // First pass: Create all note objects
+      notes.forEach(note => {
+        if (note.archived) return;
+        notesMap.set(note.roomId, { ...note, children: [] });
+      });
+
+      // Second pass: Build the hierarchy
+      notesMap.forEach(note => {
+        if (note.parentNoteId && notesMap.has(note.parentNoteId)) {
+          const parent = notesMap.get(note.parentNoteId);
+          parent?.children?.push(note);
+        } else {
+          rootNotes.push(note);
+        }
+      });
+
+      return rootNotes;
+    };
+
+    const sortNotes = (notes: NoteWithChildren[]): NoteWithChildren[] => {
       return [...notes].sort((a, b) => {
         if (sortCriterion === "title") {
-          return a.title.localeCompare(b.title);
+          return (a.title || "").localeCompare(b.title || "");
         }
         const aDate = sortCriterion === "createdAt" ? a.createdAt?.toDate() : a.updatedAt?.toDate();
         const bDate = sortCriterion === "createdAt" ? b.createdAt?.toDate() : b.updatedAt?.toDate();
-        return bDate.getTime() - aDate.getTime(); // Descending order
-      });
+        return (bDate?.getTime() || 0) - (aDate?.getTime() || 0); // Descending order
+      }).map(note => ({
+        ...note,
+        children: note.children ? sortNotes(note.children) : []
+      }));
     };
-  
-    const filterNotes = (notes: RoomDocument[]) => {
-      return notes.filter((note) =>
-        note.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+
+    const filterNotes = (notes: NoteWithChildren[]): NoteWithChildren[] => {
+      return notes.filter(note => {
+        const matchesSearch = (note.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+        const hasMatchingChildren = note.children && filterNotes(note.children).length > 0;
+        return matchesSearch || hasMatchingChildren;
+      }).map(note => ({
+        ...note,
+        children: note.children ? filterNotes(note.children) : []
+      }));
     };
-  
-    const grouped = rooms.reduce<{
-      owner: RoomDocument[];
-      editor: RoomDocument[];
+
+    const hierarchy = buildHierarchy(rooms);
+    const sorted = sortNotes(hierarchy);
+    const filtered = filterNotes(sorted);
+
+    // Group the root notes by owner vs editor
+    const grouped = filtered.reduce<{
+      owner: NoteWithChildren[];
+      editor: NoteWithChildren[];
     }>(
-      (acc, roomData) => {
-        if (roomData.role === "owner") {
-          acc.owner.push(roomData);
+      (acc, note) => {
+        if (note.role === "owner") {
+          acc.owner.push(note);
         } else {
-          acc.editor.push(roomData);
+          acc.editor.push(note);
         }
         return acc;
       },
       { owner: [], editor: [] }
     );
 
-    setGroupedData({
-      owner: sortNotes(filterNotes(grouped.owner)),
-      editor: sortNotes(filterNotes(grouped.editor)),
-    });
+    setGroupedData(grouped);
   }, [rooms, sortCriterion, searchQuery]);
-  
-  
+
+  const handleMoveNote = async (draggedId: string, newParentId: string | null) => {
+    if (newParentId) {
+      const childrenOf = (id: string): string[] =>
+        rooms.filter((r) => r.parentNoteId === id).flatMap((r) => [r.roomId, ...childrenOf(r.roomId)]);
+      if (draggedId === newParentId || childrenOf(draggedId).includes(newParentId)) {
+        toast.error("Cannot move a note into its own sub-note");
+        return;
+      }
+    }
+    const result = await moveNote(draggedId, newParentId);
+    if (result.success) {
+      toast.success("Note moved");
+    } else {
+      toast.error(result.error || "Failed to move note");
+    }
+  };
+
+  const rootDropProps = {
+    onDragOver: (e: React.DragEvent) => {
+      const NOTE_DRAG_TYPE = "application/x-notescape-note";
+      if (!e.dataTransfer.types.includes(NOTE_DRAG_TYPE)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setIsRootDragOver(true);
+    },
+    onDragLeave: () => setIsRootDragOver(false),
+    onDrop: (e: React.DragEvent) => {
+      setIsRootDragOver(false);
+      const NOTE_DRAG_TYPE = "application/x-notescape-note";
+      const draggedId = e.dataTransfer.getData(NOTE_DRAG_TYPE);
+      if (!draggedId) return;
+      e.preventDefault();
+      handleMoveNote(draggedId, null);
+    },
+  };
+
+  const onExpand = (noteId: string) => {
+    setExpanded((prevExpanded) => ({
+      ...prevExpanded,
+      [noteId]: !prevExpanded[noteId],
+    }));
+  };
 
   const onRedirect = (noteId: string) => {
     router.push(`/notes/${noteId}`);
   };
 
-  const renderDocuments = (notes: RoomDocument[]) => { // Replace with your timestamp
+  const renderNotesHierarchy = (notes: NoteWithChildren[], depth = 0) => {
     return notes.map((note) => (
-      <div
-        key={note.roomId}
-        className={`group flex items-center gap-2 w-full p-2 pl-3 rounded-lg cursor-pointer
-          hover:bg-accent transition-colors duration-200`}
-        onClick={() => onRedirect(note.roomId)}
-      >
-        <div className="flex items-center justify-between flex-1 gap-2 truncate">
-          <p className="flex flex-row space-x-2 items-center truncate">
-            {note.icon || "📄"}
-            <span className="truncate">{note.title}</span>
-            {note.archived && <span className="text-xs text-center h-5 bg-red-300 px-1 rounded-md border-2 border-red-700 text-red-700 border-dashed">trash</span>}
-          </p>
-          <p className="text-xs text-muted-foreground text-nowrap">
-            {formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })}
-          </p>
-        </div>
+      <div key={note.roomId} className="w-full">
+        <Item
+          id={note.roomId}
+          onClick={() => onRedirect(note.roomId)}
+          label={note.title}
+          icon={FileIcon}
+          documentIcon={note.icon}
+          active={params.noteId === note.roomId}
+          onExpand={() => onExpand(note.roomId)}
+          expanded={expanded[note.roomId]}
+          isEditor={note.role === "editor"}
+          quickAccess={note.quickAccess}
+          onMoveNote={(draggedId, targetId) => handleMoveNote(draggedId, targetId)}
+          level={depth}
+        />
+        {expanded[note.roomId] && note.children && note.children.length > 0 && (
+          <div className="space-y-1">
+            {renderNotesHierarchy(note.children, depth + 1)}
+          </div>
+        )}
       </div>
     ));
   };
 
   const handleCreateNewNote = () => {
     try {
-      startTransition(async() => {
-        const {noteId} = await createNewNote();
+      startTransition(async () => {
+        const { noteId } = await createNewNote();
         router.push(`/notes/${noteId}`);
-      })
+      });
       toast.success("New note created");
     } catch (error) {
-      toast.error("failed to create a new note");
+      toast.error("Failed to create a new note");
       console.error(error);
     }
-  }
+  };
 
   return (
-    <div className="h-full flex flex-col">
-      <Card className="flex-1 border-none shadow-none">
+    <div className="h-full flex flex-col pt-14">
+      <Card className="flex-1 border-none shadow-none bg-transparent">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-between mt-4">
             <CardTitle className="text-xl font-medium">All Notes</CardTitle>
             <Button onClick={handleCreateNewNote} className="gap-2" disabled={isPending}>
               <Plus size={16} />
-              {isPending ? "Creating New Note" : "New Note" }
+              {isPending ? "Creating New Note" : "New Note"}
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -168,17 +253,31 @@ export default function NotesPage() {
           <div className="space-y-4">
             {groupedData.owner.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold">My Notes</h2>
-                <div className="space-y-1">{renderDocuments(groupedData.owner)}</div>
+                <h2
+                  className={cn(
+                    "text-lg font-semibold px-1 rounded-sm -mx-1",
+                    isRootDragOver && "bg-primary/10 outline outline-1 outline-primary/40"
+                  )}
+                  title="Drop a note here to move it to the top level"
+                  {...rootDropProps}
+                >
+                  My Notes
+                </h2>
+                <div className="space-y-1 mt-2">{renderNotesHierarchy(groupedData.owner)}</div>
               </div>
             )}
             {groupedData.editor.length > 0 && (
-              <div>
+              <div className="mt-4">
                 <h2 className="text-lg font-semibold">Shared with Me</h2>
-                <div className="space-y-1">
-                  {renderDocuments(groupedData.editor)}
+                <div className="space-y-1 mt-2">
+                  {renderNotesHierarchy(groupedData.editor)}
                 </div>
               </div>
+            )}
+            {groupedData.owner.length === 0 && groupedData.editor.length === 0 && (
+              <p className="text-center text-muted-foreground py-10">
+                No notes found
+              </p>
             )}
           </div>
         </CardContent>

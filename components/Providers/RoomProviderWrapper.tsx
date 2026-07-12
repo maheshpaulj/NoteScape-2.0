@@ -37,7 +37,7 @@ function RoomProviderWrapper({
   const { user } = useUser();
 
   const [usersInRoom] = useCollection(
-    user && query(collectionGroup(db, "rooms"), where("roomId", "==", roomId))
+    user && roomId ? query(collectionGroup(db, "rooms"), where("roomId", "==", roomId)) : null
   ) || 1;
 
   // Callback to switch to Liveblocks if others are present

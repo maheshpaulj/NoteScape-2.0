@@ -7,6 +7,7 @@ import { useUser } from "@clerk/nextjs";
 import { startTransition, useState } from "react";
 import { addNoteToQuickAccess, archiveNote, createNewNote, duplicateNote, removeNoteFromQuickAccess, removeUserFromNote } from "@/actions/actions";
 import { useRouter } from "next/navigation";
+import { useMediaQuery } from "usehooks-ts";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -44,8 +45,9 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
   const { user } = useUser();
   const router = useRouter();
   const [isDragOver, setIsDragOver] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
-  const draggable = !!id && !isEditor && !!onMoveNote;
+  const draggable = !isMobile && !!id && !isEditor && !!onMoveNote;
 
   const handleDragStart = (e: React.DragEvent) => {
     if (!id) return;
@@ -159,8 +161,8 @@ export function Item ({id,label,onClick,icon:Icon,active,documentIcon,isSearch,l
   }
 
 return (
-    <div className={cn(`group min-h-[27px] text-sm max-md:text-xl py-1 pr-3 w-full hover:bg-primary/5
-    flex items-center text-muted-foreground font-medium touch-none`,
+    <div className={cn(`group min-h-[27px] max-md:min-h-[44px] text-sm max-md:text-base py-1 max-md:py-2.5 pr-3 w-full hover:bg-primary/5
+    flex items-center text-muted-foreground font-medium md:touch-none`,
     active && 'bg-primary/5 text-primary',
     isDragOver && 'bg-primary/10 outline outline-1 outline-primary/40 rounded-sm')}
      onClick={onClick} role="button" style={{paddingLeft:level ? `${(level * 12) + 12}px` :'12px'}}

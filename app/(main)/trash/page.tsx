@@ -208,7 +208,7 @@ export default function TrashPage() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col pt-14">
       <Card className="flex-1 border-none shadow-none">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-between mt-4">

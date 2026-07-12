@@ -1,7 +1,7 @@
 'use client'
 import { cn } from "@/lib/utils"
-import { ChevronsLeft, MenuIcon, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook, AlarmClock } from "lucide-react"
-import { useParams, usePathname, useRouter } from "next/navigation"
+import { ChevronsLeft, PlusCircle, Search, HomeIcon, Settings, Trash, Notebook, AlarmClock } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
 import React, { ElementRef, useEffect, useRef, useState, useTransition, TouchEvent } from "react"
 import { useMediaQuery } from 'usehooks-ts'
 import { UserItem } from "./UserItem"
@@ -16,7 +16,6 @@ import { Navbar } from "./Navbar"
 export function Sidebar() {
   const pathname = usePathname();
   const settings = useSettings();
-  const params = useParams();
   const search = useSearch();
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width:768px)")
@@ -66,16 +65,22 @@ export function Sidebar() {
     if (!isMobile) return
 
     let startX: number | null = null
+    let startY = 0
 
     const onTouchStart = (e: globalThis.TouchEvent) => {
       const x = e.touches[0].clientX
       // Only track swipes that begin near the left edge of the screen.
       startX = x < 40 ? x : null
+      startY = e.touches[0].clientY
     }
 
     const onTouchMove = (e: globalThis.TouchEvent) => {
       if (startX === null || !isCollapsed) return
-      if (e.touches[0].clientX - startX > 50) {
+      const dx = e.touches[0].clientX - startX
+      const dy = Math.abs(e.touches[0].clientY - startY)
+      // Require a clearly horizontal swipe so vertical scrolls that start near
+      // the left edge don't open the sidebar.
+      if (dx > 50 && dx > dy) {
         startX = null
         resetWidth()
       }
@@ -171,7 +176,7 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className={cn(`group/sidebar h-full bg-secondary overflow-y-auto overflow-x-hidden relative flex flex-col w-60 z-[99999]`,
+        className={cn(`group/sidebar h-full bg-secondary relative flex flex-col w-60 z-[99999]`,
           isResetting && 'transition-all ease-in-out duration-300',
           isMobile && 'w-0',
           !isCollapsed && "px-2")}
@@ -179,15 +184,15 @@ export function Sidebar() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
       >
-        <div>
+        <div className="flex-grow overflow-y-auto overflow-x-hidden pb-4">
           <div
-            className={cn(`w-6 h-6 text-muted-foreground rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600 absolute
-              top-3 right-2 opacity-0 group-hover/sidebar:opacity-100 transition`,
-              isMobile && 'opacity-100')}
+            className={cn(`text-muted-foreground rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600 absolute
+              top-3 right-2 opacity-0 group-hover/sidebar:opacity-100 transition flex items-center justify-center z-20`,
+              isMobile ? 'opacity-100 w-12 h-12' : 'w-6 h-6')}
             onClick={collapse}
             role="button"
           >
-            <ChevronsLeft className="w-6 h-6 max-lg:scale-150" />
+            <ChevronsLeft className="w-6 h-6" />
           </div>
           <div>
             <UserItem />
@@ -238,8 +243,8 @@ export function Sidebar() {
             onClick={resetWidth}
           />
         </div>
-        <div className="absolute bottom-0 w-full text-center font-bold text-muted-foreground">
-          <p className="text-sm">NoteScape v2.6</p>
+        <div className="w-full py-3 text-center border-t bg-secondary shrink-0 font-bold text-muted-foreground">
+          <p className="text-xs">NoteScape v2.6.1</p>
         </div>
       </aside>
       <div
@@ -248,16 +253,10 @@ export function Sidebar() {
           isMobile && 'left-0 w-full')}
         ref={navbarRef}
       >
-        {!!params.noteId ? (
-          <Navbar
-            isCollapsed={isCollapsed}
-            onResetWidth={resetWidth}
-          />
-        ) : (
-          <nav className="bg-transparent px-3 py-2 w-full">
-            {isCollapsed && <MenuIcon className="w-6 h-6 text-muted-foreground" onClick={resetWidth} role="button" />}
-          </nav>
-        )}
+        <Navbar
+          isCollapsed={isCollapsed}
+          onResetWidth={resetWidth}
+        />
       </div>
     </>
   )

@@ -158,7 +158,7 @@ export default function RemindersPage() {
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <div className="container mx-auto p-4 md:p-8 max-w-3xl">
+      <div className="container mx-auto p-4 md:p-8 max-w-3xl mt-14">
         <NotificationPermissionBanner isSubscribed={isCurrentDeviceSubscribed} permission={notificationPermission} />
         
         <div className="flex items-center justify-between gap-2 mb-4">

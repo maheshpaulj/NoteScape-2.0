@@ -22,6 +22,7 @@ import {
   seedEditorFromHTML,
   sharedEditorDomAttributes,
   useFullWidthCaret,
+  ensureTrailingEmptyParagraph,
 } from "../Editor/shared";
 
 type SaveStatus = "saved" | "saving" | "idle";
@@ -136,19 +137,24 @@ export default function Editor({ noteId }: { noteId: string }) {
           <span className="text-sm text-green-500">Saved</span>
         )}
       </div>
-      <div className="relative w-full" ref={containerRef}>
-        <BlockNoteView
-          editor={editor}
-          className="min-h-screen py-12"
-          theme={resolvedTheme === "dark" ? "dark" : "light"}
-          formattingToolbar={false}
-          onChange={() => {
-            setSaveStatus("saving");
-            saveToFirebase(editor.document);
-          }}
-        >
-          <SharedFormattingToolbar editor={editor} />
-        </BlockNoteView>
+      <div className="relative w-full flex-grow flex flex-col items-center pb-40 cursor-text" ref={containerRef}>
+        <div className="md:max-w-3xl lg:max-w-4xl px-4 md:px-8 w-full flex-grow flex flex-col">
+          <BlockNoteView
+            editor={editor}
+            className="flex-grow py-12 flex flex-col"
+            theme={resolvedTheme === "dark" ? "dark" : "light"}
+            formattingToolbar={false}
+            onChange={() => {
+              if (editor.isFocused()) {
+                ensureTrailingEmptyParagraph(editor);
+              }
+              setSaveStatus("saving");
+              saveToFirebase(editor.document);
+            }}
+          >
+            <SharedFormattingToolbar editor={editor} />
+          </BlockNoteView>
+        </div>
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ import {
   seedEditorFromHTML,
   sharedEditorDomAttributes,
   useFullWidthCaret,
+  ensureTrailingEmptyParagraph,
 } from "./shared";
 
 type BlockNoteProps = {
@@ -136,7 +137,7 @@ function BlockNote({ doc, provider, roomId, initialContent, contentSource }: Blo
   }, [updateFirebase]);
 
   return (
-    <div className="relative w-full" ref={containerRef}>
+    <div className="relative w-full flex-grow flex flex-col pb-40" ref={containerRef}>
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
         {saveStatus === "saving" && (
           <span className="text-sm text-gray-500">Saving...</span>
@@ -146,18 +147,23 @@ function BlockNote({ doc, provider, roomId, initialContent, contentSource }: Blo
         )}
         <ExportButton editor={editor} />
       </div>
-      <BlockNoteView
-        editor={editor}
-        className="min-h-screen py-12"
-        theme={resolvedTheme === "dark" ? "dark" : "light"}
-        formattingToolbar={false}
-        onChange={() => {
-          setSaveStatus("saving");
-          updateFirebase();
-        }}
-      >
-        <SharedFormattingToolbar editor={editor} />
-      </BlockNoteView>
+      <div className="md:max-w-3xl lg:max-w-4xl mx-auto px-4 md:px-8 w-full flex-grow flex flex-col">
+        <BlockNoteView
+          editor={editor}
+          className="flex-grow py-12 flex flex-col"
+          theme={resolvedTheme === "dark" ? "dark" : "light"}
+          formattingToolbar={false}
+          onChange={() => {
+            if (editor.isFocused()) {
+              ensureTrailingEmptyParagraph(editor);
+            }
+            setSaveStatus("saving");
+            updateFirebase();
+          }}
+        >
+          <SharedFormattingToolbar editor={editor} />
+        </BlockNoteView>
+      </div>
     </div>
   );
 }
