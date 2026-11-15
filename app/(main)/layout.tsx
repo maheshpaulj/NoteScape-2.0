@@ -1,9 +1,14 @@
 "use client";
-import { SearchCommand } from "@/components/SearchCommand";
+import dynamic from "next/dynamic";
 import { Sidebar } from "@/components/Sidebar";
 import { Spinner } from "@/components/Spinner";
 import { useUser } from "@clerk/clerk-react";
 import { redirect } from "next/navigation";
+
+const SearchCommand = dynamic(
+  () => import("@/components/SearchCommand").then((mod) => mod.SearchCommand),
+  { ssr: false }
+);
 
 export default function AuthLayout({
   children,

@@ -1,9 +1,16 @@
-'use client'	
+'use client'
 
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 
-import { SettingsModal } from "@/components/Modals/SettingsModal"
-import { CoverImageModal } from "@/components/Modals/CoverImageModal"
+const SettingsModal = dynamic(
+  () => import("@/components/Modals/SettingsModal").then((mod) => mod.SettingsModal),
+  { ssr: false }
+)
+const CoverImageModal = dynamic(
+  () => import("@/components/Modals/CoverImageModal").then((mod) => mod.CoverImageModal),
+  { ssr: false }
+)
 
 export function ModalProvider () {
 

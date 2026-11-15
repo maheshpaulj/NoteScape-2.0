@@ -48,4 +48,7 @@ wrangler.toml
 
 # Others (optional)
 *.log
+.codex/
+SCRATCHPAD.md
+
 coverage/

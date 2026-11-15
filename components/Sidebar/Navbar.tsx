@@ -37,26 +37,8 @@ export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
   const pathname = usePathname()
   const { user } = useUser()
   const roomId = params.noteId?.toString()
-  const isOwner = useOwner(roomId);
 
-  // Get the room document from Firestore
-  const roomDocRef = roomId && user 
-    ? doc(db, `users/${user.emailAddresses[0].toString()}/rooms/${roomId}`)
-    : null
-
-  const [roomData, loading] = useDocumentData<RoomDocument>(roomDocRef as DocumentReference<RoomDocument>);
-
-  if (loading) {
-    return (
-      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex justify-between gap-x-4">
-        <Title.Skeleton />
-        <div className="flex gap-x-2 items-center">
-          <Menu.Skeleton/>
-        </div>
-      </nav>
-    )
-  }
-
+  // Handle non-note pages immediately without waiting for room query states
   if (!roomId) {
     let pageTitle = "";
     if (pathname === "/home") pageTitle = "Home";
@@ -79,6 +61,39 @@ export function Navbar({ isCollapsed, onResetWidth }: NavbarProps) {
           <div className="flex items-center gap-x-1 font-semibold text-sm max-md:text-base">
             <span>{pageTitle}</span>
           </div>
+        </div>
+      </nav>
+    )
+  }
+
+  return <NoteNavbar roomId={roomId} isCollapsed={isCollapsed} onResetWidth={onResetWidth} user={user} />
+}
+
+function NoteNavbar({
+  roomId,
+  isCollapsed,
+  onResetWidth,
+  user,
+}: {
+  roomId: string;
+  isCollapsed: boolean;
+  onResetWidth: () => void;
+  user: ReturnType<typeof useUser>["user"];
+}) {
+  const ownerFromHook = useOwner(roomId);
+  const roomDocRef = user 
+    ? doc(db, `users/${user.emailAddresses[0].toString()}/rooms/${roomId}`)
+    : null
+
+  const [roomData, loading] = useDocumentData<RoomDocument>(roomDocRef as DocumentReference<RoomDocument>);
+  const isOwner = roomData?.role === "owner" || ownerFromHook;
+
+  if (loading) {
+    return (
+      <nav className="bg-background dark:bg-[#1F1F1F] px-3 py-2 w-full flex justify-between gap-x-4">
+        <Title.Skeleton />
+        <div className="flex gap-x-2 items-center">
+          <Menu.Skeleton/>
         </div>
       </nav>
     )
